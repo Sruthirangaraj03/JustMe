@@ -18,7 +18,7 @@ function useLocalStorage(key, defaultValue) {
 
 // Google Fonts loaded via @import style injection
 const fontStyle = `
-  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=DM+Sans:wght@400;500;600&family=Caveat:wght@600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=DM+Sans:wght@400;500;600&family=Caveat:wght@600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap');
   
   * { box-sizing: border-box; margin: 0; padding: 0; }
   
@@ -134,7 +134,7 @@ function Modal({ isOpen, onClose, children, title }) {
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 flex items-center justify-center"
-        style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+        style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         onClick={onClose}
       >
         <motion.div
@@ -179,7 +179,8 @@ const textareaStyle = {
   resize: 'vertical',
   minHeight: '90px',
   fontFamily: 'DM Sans, sans-serif',
-  fontWeight: '600',
+  fontWeight: '500',
+  whiteSpace: 'pre-wrap',
 };
 
 const btnPrimary = {
@@ -329,6 +330,8 @@ function PasswordGate({ onUnlock }) {
     </motion.div>
   );
 }
+
+// ─── LINKS PAGE ───────────────────────────────────────────────────────────────
 function LinksPage() {
   const [links, setLinks] = useLocalStorage('mine_links', [
     { id: 1, name: 'LinkedIn', url: 'https://linkedin.com', color: '#60a5fa' },
@@ -362,7 +365,6 @@ function LinksPage() {
         <AnimatePresence>
           {links.map((link, i) => (
             <div key={link.id} style={{ position: 'relative' }}>
-              {/* Floating delete — outside the anchor, can't accidentally trigger link */}
               <button
                 onClick={() => setConfirmId(link.id)}
                 title="Delete"
@@ -462,7 +464,7 @@ function RemindersPage() {
     <div style={{ padding: '40px 0' }}>
       <ConfirmDelete isOpen={!!confirmId} onConfirm={doDelete} onCancel={() => setConfirmId(null)} label={confirmLabel} />
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px', marginBottom: '40px' }}>
-        <h2 className="syne" style={{ fontSize: '2.6rem', color: '#f0ece3', letterSpacing: '-0.01em', fontWeight: '600' }}>Reminders</h2>
+        <h2 style={{ fontSize: '2.6rem', color: '#f0ece3', letterSpacing: '-0.01em', fontWeight: '700', fontFamily: 'Bricolage Grotesque, sans-serif' }}>Reminders</h2>
         <span className="sans" style={{ fontSize: '0.9rem', color: '#555', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase' }}>notes to self</span>
       </div>
 
@@ -485,8 +487,8 @@ function RemindersPage() {
                   background: p.bg,
                   borderRadius: '4px',
                   padding: '20px',
-                  width: '200px',
-                  minHeight: '160px',
+                  width: '240px',
+                  minHeight: '180px',
                   boxShadow: '4px 6px 20px rgba(0,0,0,0.35)',
                   position: 'relative',
                   cursor: 'pointer',
@@ -518,8 +520,9 @@ function RemindersPage() {
                   </button>
                 </div>
                 <p style={{
-                  fontFamily: 'Caveat, cursive',
-                  fontSize: '1.2rem',
+                  fontFamily: 'Bricolage Grotesque, sans-serif',
+                  fontStyle: 'normal',
+                  fontSize: '1.1rem',
                   fontWeight: '700',
                   color: '#000000',
                   marginTop: '12px',
@@ -529,11 +532,15 @@ function RemindersPage() {
                   {note.title}
                 </p>
                 <p style={{
-                  fontFamily: 'Caveat, cursive',
-                  fontSize: '1.05rem',
-                  fontWeight: '600',
+                  fontFamily: 'Bricolage Grotesque, sans-serif',
+                  fontStyle: 'normal',
+                  fontSize: '0.85rem',
+                  fontWeight: '400',
                   color: '#111111',
-                  lineHeight: 1.55,
+                  lineHeight: 1.65,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
                 }}>
                   {note.body}
                 </p>
@@ -551,7 +558,7 @@ function RemindersPage() {
             background: '#1a1a1a',
             border: '2px dashed #2a2a2a',
             borderRadius: '4px',
-            width: '200px', minHeight: '160px',
+            width: '240px', minHeight: '180px',
             cursor: 'pointer',
             color: '#444',
             display: 'flex', flexDirection: 'column',
@@ -708,14 +715,17 @@ function RoadmapPage() {
                   {pg.title}
                 </h3>
 
+                {/* ✅ FIX: white-space: pre-wrap preserves line breaks exactly as typed, color forced black */}
                 <p style={{
                   fontSize: '0.85rem',
-                  color: '#555',
+                  color: '#1a1a1a',
                   lineHeight: 1.65,
                   fontFamily: 'DM Sans, sans-serif',
-                  fontWeight: '600',
+                  fontWeight: '500',
                   position: 'relative',
                   zIndex: 1,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
                 }}>
                   {pg.body}
                 </p>
