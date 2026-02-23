@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── PERSIST TO WINDOW STORAGE (no localStorage) ─────────────────────────────
@@ -12,7 +12,6 @@ function useMemStorage(key, defaultValue) {
   return [value, setValue];
 }
 
-// Google Fonts loaded via @import style injection
 const fontStyle = `
   @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=DM+Sans:wght@400;500;600&family=Caveat:wght@600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap');
   
@@ -74,10 +73,8 @@ const fontStyle = `
   .page-card::before {
     content: '';
     position: absolute;
-    top: 0;
-    right: 0;
-    width: 0;
-    height: 0;
+    top: 0; right: 0;
+    width: 0; height: 0;
     border-style: solid;
     border-width: 0 20px 20px 0;
     border-color: transparent var(--page-fold) transparent transparent;
@@ -104,19 +101,16 @@ const PlusIcon = () => (
     <path d="M9 3v12M3 9h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
   </svg>
 );
-
 const XIcon = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
     <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
   </svg>
 );
-
 const EditIcon = () => (
   <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
     <path d="M1 12l2.5-1 7-7L9 2.5 2 9.5 1 12zm8-9.5l1-1 1.5 1.5-1 1L9 2.5z" fill="currentColor"/>
   </svg>
 );
-
 const ArrowIcon = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="link-arrow">
     <path d="M3 11L11 3M5 3h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -130,7 +124,6 @@ const FAVICON_URL = (url) => {
   } catch { return null; }
 };
 
-// ─── LINK ICONS ──────────────────────────────────────────────────────────────
 const LINK_COLORS = [
   '#c084fc', '#67e8f9', '#86efac', '#fbbf24', '#f87171',
   '#a78bfa', '#34d399', '#fb923c', '#e879f9', '#60a5fa'
@@ -152,14 +145,7 @@ function Modal({ isOpen, onClose, children, title }) {
           exit={{ scale: 0.95, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
           onClick={e => e.stopPropagation()}
-          style={{
-            background: '#141414',
-            border: '1px solid #2a2a2a',
-            borderRadius: '16px',
-            padding: '28px',
-            width: '360px',
-            boxShadow: '0 40px 80px rgba(0,0,0,0.6)',
-          }}
+          style={{ background: '#141414', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '28px', width: '360px', boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}
         >
           <p className="syne" style={{ fontSize: '1.2rem', marginBottom: '20px', color: '#f0ece3' }}>{title}</p>
           {children}
@@ -171,43 +157,21 @@ function Modal({ isOpen, onClose, children, title }) {
 
 // ─── INPUT STYLES ─────────────────────────────────────────────────────────────
 const inputStyle = {
-  width: '100%',
-  background: '#1e1e1e',
-  border: '1px solid #2e2e2e',
-  borderRadius: '10px',
-  padding: '10px 14px',
-  color: '#f0ece3',
-  fontSize: '0.9rem',
-  outline: 'none',
-  marginBottom: '12px',
-  transition: 'border-color 0.2s',
+  width: '100%', background: '#1e1e1e', border: '1px solid #2e2e2e',
+  borderRadius: '10px', padding: '10px 14px', color: '#f0ece3',
+  fontSize: '0.9rem', outline: 'none', marginBottom: '12px', transition: 'border-color 0.2s',
 };
-
 const textareaStyle = {
-  ...inputStyle,
-  resize: 'vertical',
-  minHeight: '90px',
-  fontFamily: 'DM Sans, sans-serif',
-  fontWeight: '500',
-  whiteSpace: 'pre-wrap',
+  ...inputStyle, resize: 'vertical', minHeight: '90px',
+  fontFamily: 'DM Sans, sans-serif', fontWeight: '500', whiteSpace: 'pre-wrap',
 };
-
 const btnPrimary = {
-  width: '100%',
-  padding: '10px',
-  borderRadius: '10px',
-  border: 'none',
-  cursor: 'pointer',
-  fontWeight: '700',
-  fontSize: '0.9rem',
-  fontFamily: 'Bricolage Grotesque, sans-serif',
-  letterSpacing: '0.01em',
-  background: 'linear-gradient(135deg, #c084fc, #67e8f9)',
-  color: '#0d0d0d',
-  marginTop: '4px',
+  width: '100%', padding: '10px', borderRadius: '10px', border: 'none',
+  cursor: 'pointer', fontWeight: '700', fontSize: '0.9rem',
+  fontFamily: 'Bricolage Grotesque, sans-serif', letterSpacing: '0.01em',
+  background: 'linear-gradient(135deg, #c084fc, #67e8f9)', color: '#0d0d0d', marginTop: '4px',
 };
 
-// ─── PASTEL COLORS for sticky notes ──────────────────────────────────────────
 const PASTEL = [
   { bg: '#fef3c7', accent: '#f59e0b', fold: '#fde68a' },
   { bg: '#fce7f3', accent: '#ec4899', fold: '#fbcfe8' },
@@ -217,8 +181,6 @@ const PASTEL = [
   { bg: '#fff7ed', accent: '#f97316', fold: '#fed7aa' },
   { bg: '#ecfeff', accent: '#06b6d4', fold: '#a5f3fc' },
 ];
-
-// ─── PAGE BOOK COLORS ────────────────────────────────────────────────────────
 const BOOK_COLORS = [
   { color: '#c084fc', fold: '#e9d5ff' },
   { color: '#67e8f9', fold: '#a5f3fc' },
@@ -226,8 +188,6 @@ const BOOK_COLORS = [
   { color: '#fbbf24', fold: '#fde68a' },
   { color: '#f87171', fold: '#fca5a5' },
 ];
-
-// ─── STREAK BOOK COLORS ──────────────────────────────────────────────────────
 const STREAK_BOOK_COLORS = [
   { color: '#fb923c', fold: '#fed7aa' },
   { color: '#fbbf24', fold: '#fde68a' },
@@ -235,10 +195,9 @@ const STREAK_BOOK_COLORS = [
   { color: '#c084fc', fold: '#e9d5ff' },
   { color: '#86efac', fold: '#bbf7d0' },
 ];
-
 const rotations = [-1.8, 1.2, -0.8, 2, -1.5, 0.9, -2.2, 1.6];
 
-// ─── CONFIRM DELETE MODAL ────────────────────────────────────────────────────
+// ─── CONFIRM DELETE ───────────────────────────────────────────────────────────
 function ConfirmDelete({ isOpen, onConfirm, onCancel, label }) {
   if (!isOpen) return null;
   return (
@@ -260,12 +219,8 @@ function ConfirmDelete({ isOpen, onConfirm, onCancel, label }) {
           <p style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '1.1rem', color: '#f0ece3', marginBottom: '8px' }}>Delete this?</p>
           <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', color: '#666', marginBottom: '24px' }}>"{label}" will be gone forever🥺</p>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={onCancel} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #2e2e2e', background: 'transparent', color: '#888', fontFamily: 'DM Sans, sans-serif', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}>
-              Cancel
-            </button>
-            <button onClick={onConfirm} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #f87171, #fb923c)', color: '#fff', fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', cursor: 'pointer', fontSize: '0.9rem' }}>
-              Yes, delete
-            </button>
+            <button onClick={onCancel} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #2e2e2e', background: 'transparent', color: '#888', fontFamily: 'DM Sans, sans-serif', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}>Cancel</button>
+            <button onClick={onConfirm} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #f87171, #fb923c)', color: '#fff', fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', cursor: 'pointer', fontSize: '0.9rem' }}>Yes, delete</button>
           </div>
         </motion.div>
       </motion.div>
@@ -278,71 +233,25 @@ function PasswordGate({ onUnlock }) {
   const [pw, setPw] = useState('');
   const [error, setError] = useState(false);
   const [shake, setShake] = useState(false);
-
   const attempt = () => {
-    if (pw === 'Switzerland') {
-      onUnlock();
-    } else {
-      setError(true);
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
-      setPw('');
-    }
+    if (pw === 'Switzerland') { onUnlock(); }
+    else { setError(true); setShake(true); setTimeout(() => setShake(false), 500); setPw(''); }
   };
-
   return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0d0d0d' }}
-    >
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'radial-gradient(ellipse 60% 50% at 30% 30%, #1a053388 0%, transparent 60%), radial-gradient(ellipse 50% 60% at 70% 70%, #001a2e88 0%, transparent 60%)',
-      }} />
-      <motion.div
-        animate={shake ? { x: [-10, 10, -8, 8, -4, 4, 0] } : {}}
-        transition={{ duration: 0.4 }}
-        style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '20px' }}
-      >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0d0d0d' }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 60% 50% at 30% 30%, #1a053388 0%, transparent 60%), radial-gradient(ellipse 50% 60% at 70% 70%, #001a2e88 0%, transparent 60%)' }} />
+      <motion.div animate={shake ? { x: [-10, 10, -8, 8, -4, 4, 0] } : {}} transition={{ duration: 0.4 }}
+        style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '20px' }}>
         <div style={{ fontSize: '4rem', marginBottom: '16px' }}>🐧</div>
-        <h1 style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '1.8rem', color: '#f0ece3', marginBottom: '8px' }}>
-          Only Sruthi can enter
-        </h1>
-        <p style={{ fontFamily: 'DM Sans, sans-serif', color: '#555', fontSize: '0.9rem', marginBottom: '32px' }}>
-          It's her world✨
-        </p>
+        <h1 style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '1.8rem', color: '#f0ece3', marginBottom: '8px' }}>Only Sruthi can enter</h1>
+        <p style={{ fontFamily: 'DM Sans, sans-serif', color: '#555', fontSize: '0.9rem', marginBottom: '32px' }}>It's her world✨</p>
         <div style={{ position: 'relative', marginBottom: '16px' }}>
-          <input
-            type="password"
-            value={pw}
-            onChange={e => { setPw(e.target.value); setError(false); }}
-            onKeyDown={e => e.key === 'Enter' && attempt()}
-            placeholder="Enter the secret"
-            autoFocus
-            style={{
-              ...inputStyle,
-              marginBottom: 0,
-              textAlign: 'center',
-              fontSize: '1rem',
-              letterSpacing: '0.15em',
-              border: error ? '1px solid #f87171' : '1px solid #2e2e2e',
-              width: '280px',
-              padding: '14px 18px',
-            }}
-          />
+          <input type="password" value={pw} onChange={e => { setPw(e.target.value); setError(false); }} onKeyDown={e => e.key === 'Enter' && attempt()} placeholder="Enter the secret" autoFocus
+            style={{ ...inputStyle, marginBottom: 0, textAlign: 'center', fontSize: '1rem', letterSpacing: '0.15em', border: error ? '1px solid #f87171' : '1px solid #2e2e2e', width: '280px', padding: '14px 18px' }} />
         </div>
-        {error && (
-          <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} style={{ color: '#f87171', fontSize: '0.85rem', marginBottom: '16px', fontFamily: 'DM Sans, sans-serif' }}>
-            Wrong password😅
-          </motion.p>
-        )}
-        <motion.button
-          whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-          onClick={attempt}
-          style={{ ...btnPrimary, width: '280px', padding: '14px', fontSize: '1rem' }}
-        >
-          Enter
-        </motion.button>
+        {error && <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} style={{ color: '#f87171', fontSize: '0.85rem', marginBottom: '16px', fontFamily: 'DM Sans, sans-serif' }}>Wrong password😅</motion.p>}
+        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={attempt} style={{ ...btnPrimary, width: '280px', padding: '14px', fontSize: '1rem' }}>Enter</motion.button>
       </motion.div>
     </motion.div>
   );
@@ -366,7 +275,6 @@ function LinksPage() {
     setLinks(l => [...l, { id: Date.now(), name, url: url.startsWith('http') ? url : 'https://' + url, color }]);
     setName(''); setUrl(''); setModal(false);
   };
-
   const doDelete = () => { setLinks(l => l.filter(x => x.id !== confirmId)); setConfirmId(null); };
   const confirmLabel = links.find(l => l.id === confirmId)?.name ?? '';
 
@@ -377,47 +285,20 @@ function LinksPage() {
         <h2 className="syne" style={{ fontSize: '2.6rem', color: '#f0ece3', letterSpacing: '-0.01em', fontWeight: '600' }}>My Links</h2>
         <span className="sans" style={{ fontSize: '0.9rem', color: '#555', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: '8px' }}>quick access</span>
       </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '24px' }}>
         <AnimatePresence>
           {links.map((link, i) => (
             <div key={link.id} style={{ position: 'relative' }}>
-              <button
-                onClick={() => setConfirmId(link.id)}
-                title="Delete"
-                style={{
-                  position: 'absolute', top: '-10px', right: '-10px', zIndex: 10,
-                  width: '26px', height: '26px', borderRadius: '50%',
-                  background: '#1e1e1e', border: '1px solid #333',
-                  cursor: 'pointer', color: '#777',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-                  transition: 'background 0.15s, color 0.15s, transform 0.15s',
-                }}
+              <button onClick={() => setConfirmId(link.id)} title="Delete"
+                style={{ position: 'absolute', top: '-10px', right: '-10px', zIndex: 10, width: '26px', height: '26px', borderRadius: '50%', background: '#1e1e1e', border: '1px solid #333', cursor: 'pointer', color: '#777', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.5)', transition: 'background 0.15s, color 0.15s, transform 0.15s' }}
                 onMouseEnter={e => { e.currentTarget.style.background = '#f87171'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'scale(1.15)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = '#1e1e1e'; e.currentTarget.style.color = '#777'; e.currentTarget.style.transform = 'scale(1)'; }}
-              >
+                onMouseLeave={e => { e.currentTarget.style.background = '#1e1e1e'; e.currentTarget.style.color = '#777'; e.currentTarget.style.transform = 'scale(1)'; }}>
                 <XIcon />
               </button>
-
-              <motion.a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="link-card"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: i * 0.05 }}
-                style={{
-                  display: 'block', position: 'relative',
-                  background: '#141414', border: `1px solid ${link.color}33`,
-                  borderRadius: '16px', padding: '24px',
-                  textDecoration: 'none', overflow: 'hidden', cursor: 'pointer',
-                }}
-                whileHover={{ y: -4, borderColor: link.color + '88' }}
-                whileTap={{ scale: 0.97 }}
-              >
+              <motion.a href={link.url} target="_blank" rel="noopener noreferrer" className="link-card"
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: i * 0.05 }}
+                style={{ display: 'block', position: 'relative', background: '#141414', border: `1px solid ${link.color}33`, borderRadius: '16px', padding: '24px', textDecoration: 'none', overflow: 'hidden', cursor: 'pointer' }}
+                whileHover={{ y: -4, borderColor: link.color + '88' }} whileTap={{ scale: 0.97 }}>
                 <div style={{ position: 'absolute', inset: 0, opacity: 0.07, background: `radial-gradient(circle at 0% 0%, ${link.color}, transparent 70%)` }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <img src={FAVICON_URL(link.url)} alt="" style={{ width: 32, height: 32, borderRadius: '8px', background: '#1e1e1e', padding: '2px' }} onError={e => { e.target.style.display = 'none'; }} />
@@ -430,14 +311,12 @@ function LinksPage() {
             </div>
           ))}
         </AnimatePresence>
-
         <motion.button onClick={() => setModal(true)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
           style={{ background: 'transparent', border: '2px dashed #2a2a2a', borderRadius: '16px', padding: '24px', cursor: 'pointer', color: '#444', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', minHeight: '120px', transition: 'border-color 0.2s, color 0.2s' }}>
           <PlusIcon />
           <span style={{ fontSize: '0.85rem', fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700' }}>Add Link</span>
         </motion.button>
       </div>
-
       <Modal isOpen={modal} onClose={() => setModal(false)} title="Add a new link ✦">
         <input style={inputStyle} placeholder="Name (e.g. LinkedIn)" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && add()} />
         <input style={inputStyle} placeholder="URL (e.g. linkedin.com/in/you)" value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && add()} />
@@ -462,18 +341,12 @@ function RemindersPage() {
 
   const openAdd = () => { setEditId(null); setTitle(''); setBody(''); setModal(true); };
   const openEdit = (n) => { setEditId(n.id); setTitle(n.title); setBody(n.body); setModal(true); };
-
   const save = () => {
     if (!title.trim()) return;
-    if (editId) {
-      setNotes(n => n.map(x => x.id === editId ? { ...x, title, body } : x));
-    } else {
-      const palette = notes.length % PASTEL.length;
-      setNotes(n => [...n, { id: Date.now(), title, body, palette }]);
-    }
+    if (editId) { setNotes(n => n.map(x => x.id === editId ? { ...x, title, body } : x)); }
+    else { setNotes(n => [...n, { id: Date.now(), title, body, palette: n.length % PASTEL.length }]); }
     setModal(false);
   };
-
   const doDelete = () => { setNotes(n => n.filter(x => x.id !== confirmId)); setConfirmId(null); };
   const confirmLabel = notes.find(n => n.id === confirmId)?.title ?? '';
 
@@ -484,71 +357,38 @@ function RemindersPage() {
         <h2 style={{ fontSize: '2.6rem', color: '#f0ece3', letterSpacing: '-0.01em', fontWeight: '700', fontFamily: 'Bricolage Grotesque, sans-serif' }}>Reminders</h2>
         <span className="sans" style={{ fontSize: '0.9rem', color: '#555', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase' }}>notes to self</span>
       </div>
-
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
         <AnimatePresence>
           {notes.map((note, i) => {
             const p = PASTEL[note.palette ?? i % PASTEL.length];
             const rot = rotations[i % rotations.length];
             return (
-              <motion.div
-                key={note.id}
-                className="sticky-note"
+              <motion.div key={note.id} className="sticky-note"
                 initial={{ opacity: 0, scale: 0.8, rotate: rot }}
                 animate={{ opacity: 1, scale: 1, rotate: rot }}
                 exit={{ opacity: 0, scale: 0.7, rotate: rot * 2 }}
                 whileHover={{ scale: 1.05, rotate: 0, zIndex: 10 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                style={{
-                  '--rot': `${rot}deg`,
-                  background: p.bg,
-                  borderRadius: '4px',
-                  padding: '20px',
-                  width: '240px',
-                  minHeight: '180px',
-                  boxShadow: '4px 6px 20px rgba(0,0,0,0.35)',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                }}
-                onClick={() => openEdit(note)}
-              >
-                <div style={{
-                  position: 'absolute',
-                  top: 0, left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: '50px', height: '12px',
-                  background: p.fold,
-                  borderRadius: '0 0 6px 6px',
-                  opacity: 0.8,
-                }} />
+                style={{ '--rot': `${rot}deg`, background: p.bg, borderRadius: '4px', padding: '20px', width: '240px', minHeight: '180px', boxShadow: '4px 6px 20px rgba(0,0,0,0.35)', position: 'relative', cursor: 'pointer', flexShrink: 0 }}
+                onClick={() => openEdit(note)}>
+                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '50px', height: '12px', background: p.fold, borderRadius: '0 0 6px 6px', opacity: 0.8 }} />
                 <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px' }}>
                   <button onClick={e => { e.stopPropagation(); openEdit(note); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: p.accent, opacity: 0.7 }}><EditIcon /></button>
                   <button onClick={e => { e.stopPropagation(); setConfirmId(note.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', opacity: 0.7 }}><XIcon /></button>
                 </div>
-                <p style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontStyle: 'normal', fontSize: '1.1rem', fontWeight: '700', color: '#000000', marginTop: '12px', marginBottom: '8px', lineHeight: 1.3 }}>
-                  {note.title}
-                </p>
-                <p style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontStyle: 'normal', fontSize: '0.85rem', fontWeight: '400', color: '#111111', lineHeight: 1.65, whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
-                  {note.body}
-                </p>
+                <p style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontStyle: 'normal', fontSize: '1.1rem', fontWeight: '700', color: '#000000', marginTop: '12px', marginBottom: '8px', lineHeight: 1.3 }}>{note.title}</p>
+                <p style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontStyle: 'normal', fontSize: '0.85rem', fontWeight: '400', color: '#111111', lineHeight: 1.65, whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word' }}>{note.body}</p>
                 <div style={{ position: 'absolute', bottom: '10px', right: '12px', width: '8px', height: '8px', borderRadius: '50%', background: p.accent, opacity: 0.6 }} />
               </motion.div>
             );
           })}
         </AnimatePresence>
-
-        <motion.button
-          onClick={openAdd}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.97 }}
-          style={{ background: '#1a1a1a', border: '2px dashed #2a2a2a', borderRadius: '4px', width: '240px', minHeight: '180px', cursor: 'pointer', color: '#444', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', flexShrink: 0 }}
-        >
+        <motion.button onClick={openAdd} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
+          style={{ background: '#1a1a1a', border: '2px dashed #2a2a2a', borderRadius: '4px', width: '240px', minHeight: '180px', cursor: 'pointer', color: '#444', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', flexShrink: 0 }}>
           <PlusIcon />
           <span style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '1rem' }}>New note</span>
         </motion.button>
       </div>
-
       <Modal isOpen={modal} onClose={() => setModal(false)} title={editId ? 'Edit note ✦' : 'New sticky note ✦'}>
         <input style={inputStyle} placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} />
         <textarea style={textareaStyle} placeholder="What's on your mind?" value={body} onChange={e => setBody(e.target.value)} />
@@ -573,18 +413,12 @@ function RoadmapPage() {
 
   const openAdd = () => { setEditId(null); setTitle(''); setBody(''); setModal(true); };
   const openEdit = (p) => { setEditId(p.id); setTitle(p.title); setBody(p.body); setModal(true); };
-
   const save = () => {
     if (!title.trim()) return;
-    if (editId) {
-      setPages(ps => ps.map(x => x.id === editId ? { ...x, title, body } : x));
-    } else {
-      const book = pages.length % BOOK_COLORS.length;
-      setPages(ps => [...ps, { id: Date.now(), title, body, book }]);
-    }
+    if (editId) { setPages(ps => ps.map(x => x.id === editId ? { ...x, title, body } : x)); }
+    else { setPages(ps => [...ps, { id: Date.now(), title, body, book: ps.length % BOOK_COLORS.length }]); }
     setModal(false);
   };
-
   const doDelete = () => { setPages(ps => ps.filter(x => x.id !== confirmId)); setConfirmId(null); };
   const confirmLabel = pages.find(p => p.id === confirmId)?.title ?? '';
 
@@ -595,67 +429,35 @@ function RoadmapPage() {
         <h2 className="syne" style={{ fontSize: '2.6rem', color: '#f0ece3', letterSpacing: '-0.01em', fontWeight: '600' }}>Roadmap</h2>
         <span className="sans" style={{ fontSize: '0.9rem', color: '#555', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase' }}>chapters of growth</span>
       </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
         <AnimatePresence>
           {pages.map((pg, i) => {
             const b = BOOK_COLORS[pg.book ?? i % BOOK_COLORS.length];
             return (
-              <motion.div
-                key={pg.id}
-                className="page-card"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, scale: 0.95 }}
-                transition={{ delay: i * 0.06 }}
+              <motion.div key={pg.id} className="page-card"
+                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20, scale: 0.95 }} transition={{ delay: i * 0.06 }}
                 whileHover={{ y: -6, boxShadow: '8px 12px 40px rgba(0,0,0,0.4)' }}
-                style={{
-                  '--page-color': b.color,
-                  '--page-fold': b.fold,
-                  background: 'linear-gradient(135deg, #faf8f4 0%, #f0ede6 100%)',
-                  borderLeft: `5px solid ${b.color}`,
-                  borderRadius: '0 12px 12px 0',
-                  padding: '24px 24px 24px 20px',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  boxShadow: '4px 8px 24px rgba(0,0,0,0.3)',
-                  overflow: 'hidden',
-                }}
-                onClick={() => openEdit(pg)}
-              >
+                style={{ '--page-color': b.color, '--page-fold': b.fold, background: 'linear-gradient(135deg, #faf8f4 0%, #f0ede6 100%)', borderLeft: `5px solid ${b.color}`, borderRadius: '0 12px 12px 0', padding: '24px 24px 24px 20px', position: 'relative', cursor: 'pointer', boxShadow: '4px 8px 24px rgba(0,0,0,0.3)', overflow: 'hidden' }}
+                onClick={() => openEdit(pg)}>
                 <div style={{ position: 'absolute', top: 0, right: 0, width: 0, height: 0, borderStyle: 'solid', borderWidth: '0 24px 24px 0', borderColor: `transparent ${b.fold} transparent transparent` }} />
-                {[60, 90, 120, 150, 180].map(t => (
-                  <div key={t} style={{ position: 'absolute', left: '20px', right: '16px', top: `${t}px`, height: '1px', background: '#e8e2d8' }} />
-                ))}
+                {[60, 90, 120, 150, 180].map(t => <div key={t} style={{ position: 'absolute', left: '20px', right: '16px', top: `${t}px`, height: '1px', background: '#e8e2d8' }} />)}
                 <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '4px', zIndex: 1 }}>
                   <button onClick={e => { e.stopPropagation(); openEdit(pg); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: b.color, opacity: 0.7 }}><EditIcon /></button>
                   <button onClick={e => { e.stopPropagation(); setConfirmId(pg.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', opacity: 0.7 }}><XIcon /></button>
                 </div>
-                <div style={{ fontSize: '0.7rem', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: b.color, marginBottom: '8px', fontFamily: 'Bricolage Grotesque, sans-serif' }}>
-                  Chapter {i + 1}
-                </div>
-                <h3 style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontSize: '1.25rem', fontWeight: '700', color: '#1a1a1a', marginBottom: '12px', lineHeight: 1.25, position: 'relative', zIndex: 1 }}>
-                  {pg.title}
-                </h3>
-                <p style={{ fontSize: '0.85rem', color: '#1a1a1a', lineHeight: 1.65, fontFamily: 'DM Sans, sans-serif', fontWeight: '500', position: 'relative', zIndex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {pg.body}
-                </p>
+                <div style={{ fontSize: '0.7rem', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: b.color, marginBottom: '8px', fontFamily: 'Bricolage Grotesque, sans-serif' }}>Chapter {i + 1}</div>
+                <h3 style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontSize: '1.25rem', fontWeight: '700', color: '#1a1a1a', marginBottom: '12px', lineHeight: 1.25, position: 'relative', zIndex: 1 }}>{pg.title}</h3>
+                <p style={{ fontSize: '0.85rem', color: '#1a1a1a', lineHeight: 1.65, fontFamily: 'DM Sans, sans-serif', fontWeight: '500', position: 'relative', zIndex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{pg.body}</p>
               </motion.div>
             );
           })}
         </AnimatePresence>
-
-        <motion.button
-          onClick={openAdd}
-          whileHover={{ y: -4 }}
-          whileTap={{ scale: 0.97 }}
-          style={{ background: '#141414', border: '2px dashed #2a2a2a', borderRadius: '0 12px 12px 0', borderLeft: '5px dashed #2a2a2a', padding: '24px', cursor: 'pointer', color: '#444', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', minHeight: '180px' }}
-        >
+        <motion.button onClick={openAdd} whileHover={{ y: -4 }} whileTap={{ scale: 0.97 }}
+          style={{ background: '#141414', border: '2px dashed #2a2a2a', borderRadius: '0 12px 12px 0', borderLeft: '5px dashed #2a2a2a', padding: '24px', cursor: 'pointer', color: '#444', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', minHeight: '180px' }}>
           <PlusIcon />
           <span style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '1rem' }}>New chapter</span>
         </motion.button>
       </div>
-
       <Modal isOpen={modal} onClose={() => setModal(false)} title={editId ? 'Edit chapter ✦' : 'New chapter ✦'}>
         <input style={inputStyle} placeholder="Chapter title" value={title} onChange={e => setTitle(e.target.value)} />
         <textarea style={textareaStyle} placeholder="What's this chapter about?" value={body} onChange={e => setBody(e.target.value)} />
@@ -666,42 +468,25 @@ function RoadmapPage() {
 }
 
 // ─── STREAK HELPERS ───────────────────────────────────────────────────────────
-function getTodayStr() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10); // "YYYY-MM-DD"
-}
-
+function getTodayStr() { return new Date().toISOString().slice(0, 10); }
 function formatDateLabel(dateStr) {
   if (!dateStr) return '';
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
-
 function calcStreak(entries) {
-  // entries is array of { date: "YYYY-MM-DD", ... }
   if (!entries || entries.length === 0) return 0;
   const dates = [...new Set(entries.map(e => e.date))].sort().reverse();
   if (!dates.length) return 0;
-
-  let streak = 0;
-  let check = getTodayStr();
-
-  // If today has no entry, check if yesterday does (streak may still be ongoing)
+  let streak = 0, check = getTodayStr();
   if (dates[0] !== check) {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
     const yStr = yesterday.toISOString().slice(0, 10);
     if (dates[0] !== yStr) return 0;
     check = yStr;
   }
-
   for (const d of dates) {
-    if (d === check) {
-      streak++;
-      const prev = new Date(check + 'T00:00:00');
-      prev.setDate(prev.getDate() - 1);
-      check = prev.toISOString().slice(0, 10);
-    } else break;
+    if (d === check) { streak++; const prev = new Date(check + 'T00:00:00'); prev.setDate(prev.getDate() - 1); check = prev.toISOString().slice(0, 10); }
+    else break;
   }
   return streak;
 }
@@ -719,73 +504,32 @@ function StreaksPage() {
   const streak = calcStreak(entries);
   const hasEntryToday = entries.some(e => e.date === getTodayStr());
 
-  const openAdd = () => {
-    setEditId(null);
-    setTitle('');
-    setBody('');
-    setEntryDate(getTodayStr());
-    setModal(true);
-  };
-
-  const openEdit = (e) => {
-    setEditId(e.id);
-    setTitle(e.title);
-    setBody(e.body);
-    setEntryDate(e.date || getTodayStr());
-    setModal(true);
-  };
-
+  const openAdd = () => { setEditId(null); setTitle(''); setBody(''); setEntryDate(getTodayStr()); setModal(true); };
+  const openEdit = (e) => { setEditId(e.id); setTitle(e.title); setBody(e.body); setEntryDate(e.date || getTodayStr()); setModal(true); };
   const save = () => {
     if (!title.trim()) return;
-    if (editId) {
-      setEntries(es => es.map(x => x.id === editId ? { ...x, title, body, date: entryDate } : x));
-    } else {
-      const book = entries.length % STREAK_BOOK_COLORS.length;
-      setEntries(es => [...es, { id: Date.now(), title, body, date: entryDate, book }]);
-    }
+    if (editId) { setEntries(es => es.map(x => x.id === editId ? { ...x, title, body, date: entryDate } : x)); }
+    else { setEntries(es => [...es, { id: Date.now(), title, body, date: entryDate, book: es.length % STREAK_BOOK_COLORS.length }]); }
     setModal(false);
   };
-
   const doDelete = () => { setEntries(es => es.filter(x => x.id !== confirmId)); setConfirmId(null); };
   const confirmLabel = entries.find(e => e.id === confirmId)?.title ?? '';
-
-  // Sort entries: newest date first
   const sorted = [...entries].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
   return (
     <div style={{ padding: '40px 0' }}>
       <ConfirmDelete isOpen={!!confirmId} onConfirm={doDelete} onCancel={() => setConfirmId(null)} label={confirmLabel} />
-
-      {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px', marginBottom: '40px' }}>
         <h2 className="syne" style={{ fontSize: '2.6rem', color: '#f0ece3', letterSpacing: '-0.01em', fontWeight: '600' }}>Streaks</h2>
         <span className="sans" style={{ fontSize: '0.9rem', color: '#555', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase' }}>daily journal</span>
-
-        {/* Streak badge */}
         {streak > 0 && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 20, delay: 0.2 }}
+          <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 20, delay: 0.2 }}
             className="streak-badge"
-            style={{
-              marginLeft: 'auto',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'linear-gradient(135deg, #f97316, #fbbf24)',
-              borderRadius: '20px',
-              padding: '6px 14px 6px 10px',
-              boxShadow: '0 0 12px #f97316aa',
-            }}
-          >
+            style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #f97316, #fbbf24)', borderRadius: '20px', padding: '6px 14px 6px 10px', boxShadow: '0 0 12px #f97316aa' }}>
             <span style={{ fontSize: '1.1rem' }}>🔥</span>
-            <span style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '0.95rem', color: '#0d0d0d' }}>
-              {streak} {streak !== 1 ? 's' : ''}
-            </span>
+            <span style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '0.95rem', color: '#0d0d0d' }}>{streak}</span>
           </motion.div>
         )}
-
         {streak === 0 && entries.length > 0 && (
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '6px 14px 6px 10px' }}>
             <span style={{ fontSize: '1rem' }}>💤</span>
@@ -793,131 +537,53 @@ function StreaksPage() {
           </div>
         )}
       </div>
-
-      {/* Today's nudge */}
       {!hasEntryToday && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            marginBottom: '28px',
-            background: '#141414',
-            border: '1px solid #f9731622',
-            borderRadius: '12px',
-            padding: '14px 20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          style={{ marginBottom: '28px', background: '#141414', border: '1px solid #f9731622', borderRadius: '12px', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '1.2rem' }}>✍️</span>
-          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.88rem', color: '#888' }}>
-            You haven't written today yet — keep the streak alive !
-          </span>
-          <button
-            onClick={openAdd}
-            style={{ marginLeft: 'auto', background: 'linear-gradient(135deg, #f97316, #fbbf24)', border: 'none', borderRadius: '8px', padding: '7px 16px', cursor: 'pointer', fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '0.8rem', color: '#0d0d0d' }}
-          >
-            Write now 🔥
-          </button>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.88rem', color: '#888' }}>You haven't written today yet — keep the streak alive!</span>
+          <button onClick={openAdd} style={{ marginLeft: 'auto', background: 'linear-gradient(135deg, #f97316, #fbbf24)', border: 'none', borderRadius: '8px', padding: '7px 16px', cursor: 'pointer', fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '0.8rem', color: '#0d0d0d' }}>Write now 🔥</button>
         </motion.div>
       )}
-
-      {/* Cards grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
         <AnimatePresence>
           {sorted.map((entry, i) => {
             const b = STREAK_BOOK_COLORS[entry.book ?? i % STREAK_BOOK_COLORS.length];
             const isToday = entry.date === getTodayStr();
             return (
-              <motion.div
-                key={entry.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, scale: 0.95 }}
-                transition={{ delay: i * 0.06 }}
+              <motion.div key={entry.id}
+                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20, scale: 0.95 }} transition={{ delay: i * 0.06 }}
                 whileHover={{ y: -6, boxShadow: '8px 12px 40px rgba(0,0,0,0.4)' }}
-                style={{
-                  background: 'linear-gradient(135deg, #faf8f4 0%, #f0ede6 100%)',
-                  borderLeft: `5px solid ${b.color}`,
-                  borderRadius: '0 12px 12px 0',
-                  padding: '24px 24px 24px 20px',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  boxShadow: isToday ? `4px 8px 24px rgba(0,0,0,0.3), 0 0 0 2px ${b.color}44` : '4px 8px 24px rgba(0,0,0,0.3)',
-                  overflow: 'hidden',
-                }}
-                onClick={() => openEdit(entry)}
-              >
-                {/* dog ear */}
+                style={{ background: 'linear-gradient(135deg, #faf8f4 0%, #f0ede6 100%)', borderLeft: `5px solid ${b.color}`, borderRadius: '0 12px 12px 0', padding: '24px 24px 24px 20px', position: 'relative', cursor: 'pointer', boxShadow: isToday ? `4px 8px 24px rgba(0,0,0,0.3), 0 0 0 2px ${b.color}44` : '4px 8px 24px rgba(0,0,0,0.3)', overflow: 'hidden' }}
+                onClick={() => openEdit(entry)}>
                 <div style={{ position: 'absolute', top: 0, right: 0, width: 0, height: 0, borderStyle: 'solid', borderWidth: '0 24px 24px 0', borderColor: `transparent ${b.fold} transparent transparent` }} />
-
-                {/* ruled lines */}
-                {[60, 90, 120, 150, 180].map(t => (
-                  <div key={t} style={{ position: 'absolute', left: '20px', right: '16px', top: `${t}px`, height: '1px', background: '#e8e2d8' }} />
-                ))}
-
-                {/* Today badge */}
+                {[60, 90, 120, 150, 180].map(t => <div key={t} style={{ position: 'absolute', left: '20px', right: '16px', top: `${t}px`, height: '1px', background: '#e8e2d8' }} />)}
                 {isToday && (
-                  <div style={{
-                    position: 'absolute', top: '10px', left: '10px',
-                    background: b.color, borderRadius: '6px',
-                    padding: '2px 8px',
-                    fontSize: '0.6rem', fontWeight: '700',
-                    fontFamily: 'Bricolage Grotesque, sans-serif',
-                    color: '#0d0d0d', letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                  }}>Today</div>
+                  <div style={{ position: 'absolute', top: '10px', left: '10px', background: b.color, borderRadius: '6px', padding: '2px 8px', fontSize: '0.6rem', fontWeight: '700', fontFamily: 'Bricolage Grotesque, sans-serif', color: '#0d0d0d', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Today</div>
                 )}
-
-                {/* Edit / Delete */}
                 <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '4px', zIndex: 1 }}>
                   <button onClick={e => { e.stopPropagation(); openEdit(entry); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: b.color, opacity: 0.7 }}><EditIcon /></button>
                   <button onClick={e => { e.stopPropagation(); setConfirmId(entry.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', opacity: 0.7 }}><XIcon /></button>
                 </div>
-
-                {/* Day label */}
                 <div style={{ fontSize: '0.7rem', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: b.color, marginBottom: '8px', fontFamily: 'Bricolage Grotesque, sans-serif', marginTop: isToday ? '16px' : '0' }}>
                   Day {sorted.length - i} — {formatDateLabel(entry.date)}
                 </div>
-
-                <h3 style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontSize: '1.25rem', fontWeight: '700', color: '#1a1a1a', marginBottom: '12px', lineHeight: 1.25, position: 'relative', zIndex: 1 }}>
-                  {entry.title}
-                </h3>
-
-                <p style={{ fontSize: '0.85rem', color: '#1a1a1a', lineHeight: 1.65, fontFamily: 'DM Sans, sans-serif', fontWeight: '500', position: 'relative', zIndex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {entry.body}
-                </p>
+                <h3 style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontSize: '1.25rem', fontWeight: '700', color: '#1a1a1a', marginBottom: '12px', lineHeight: 1.25, position: 'relative', zIndex: 1 }}>{entry.title}</h3>
+                <p style={{ fontSize: '0.85rem', color: '#1a1a1a', lineHeight: 1.65, fontFamily: 'DM Sans, sans-serif', fontWeight: '500', position: 'relative', zIndex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{entry.body}</p>
               </motion.div>
             );
           })}
         </AnimatePresence>
-
-        <motion.button
-          onClick={openAdd}
-          whileHover={{ y: -4 }}
-          whileTap={{ scale: 0.97 }}
-          style={{ background: '#141414', border: '2px dashed #2a2a2a', borderRadius: '0 12px 12px 0', borderLeft: '5px dashed #2a2a2a', padding: '24px', cursor: 'pointer', color: '#444', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', minHeight: '180px' }}
-        >
+        <motion.button onClick={openAdd} whileHover={{ y: -4 }} whileTap={{ scale: 0.97 }}
+          style={{ background: '#141414', border: '2px dashed #2a2a2a', borderRadius: '0 12px 12px 0', borderLeft: '5px dashed #2a2a2a', padding: '24px', cursor: 'pointer', color: '#444', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', minHeight: '180px' }}>
           <PlusIcon />
           <span style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '1rem' }}>New day</span>
         </motion.button>
       </div>
-
-      {/* Modal */}
       <Modal isOpen={modal} onClose={() => setModal(false)} title={editId ? 'Edit entry ✦' : 'New day entry ✦'}>
-        {/* Date picker */}
         <div style={{ marginBottom: '12px' }}>
-          <label style={{ display: 'block', fontFamily: 'DM Sans, sans-serif', fontSize: '0.78rem', color: '#666', marginBottom: '6px', letterSpacing: '0.04em', fontWeight: '600', textTransform: 'uppercase' }}>
-            📅 Pick a date
-          </label>
-          <input
-            type="date"
-            value={entryDate}
-            max={getTodayStr()}
-            onChange={e => setEntryDate(e.target.value)}
-            style={{ ...inputStyle, marginBottom: 0, cursor: 'pointer', colorScheme: 'dark' }}
-          />
+          <label style={{ display: 'block', fontFamily: 'DM Sans, sans-serif', fontSize: '0.78rem', color: '#666', marginBottom: '6px', letterSpacing: '0.04em', fontWeight: '600', textTransform: 'uppercase' }}>📅 Pick a date</label>
+          <input type="date" value={entryDate} max={getTodayStr()} onChange={e => setEntryDate(e.target.value)} style={{ ...inputStyle, marginBottom: 0, cursor: 'pointer', colorScheme: 'dark' }} />
         </div>
         <input style={inputStyle} placeholder="What's the highlight of today?" value={title} onChange={e => setTitle(e.target.value)} />
         <textarea style={textareaStyle} placeholder="Write freely... how was your day?" value={body} onChange={e => setBody(e.target.value)} />
@@ -927,19 +593,42 @@ function StreaksPage() {
   );
 }
 
-// ─── NAVBAR ───────────────────────────────────────────────────────────────────
+// ─── NAVBAR — hides on scroll down, shows on scroll up ───────────────────────
 const NAV_ITEMS = ['Links', 'Reminders', 'Roadmap', 'Streaks'];
 
 function Navbar({ active, setActive }) {
+  const [visible, setVisible] = useState(true);
+  const lastY = useRef(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const currentY = window.scrollY;
+      // always show when near top
+      if (currentY < 10) { setVisible(true); lastY.current = currentY; return; }
+      if (currentY < lastY.current) {
+        setVisible(true);   // scrolling UP → show
+      } else {
+        setVisible(false);  // scrolling DOWN → hide
+      }
+      lastY.current = currentY;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <nav style={{
-      position: 'fixed', top: 0, left: 0, right: 0,
-      zIndex: 100,
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 48px',
-      height: '64px',
-      background: 'transparent',
-    }}>
+    <motion.nav
+      animate={{ y: visible ? 0 : -80 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      style={{
+        position: 'fixed', top: 0, left: 0, right: 0,
+        zIndex: 100,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 48px',
+        height: '64px',
+        background: 'transparent',   // ← unchanged, stays transparent
+      }}
+    >
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
         <span className="syne" style={{ fontSize: '1.2rem', color: '#f0ece3', letterSpacing: '-0.01em' }}>
           <span style={{ background: 'linear-gradient(90deg, #c084fc, #67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>JustMe</span>
@@ -958,21 +647,12 @@ function Navbar({ active, setActive }) {
               transition={{ delay: 0.1 + i * 0.07 }}
               onClick={() => setActive(item)}
               style={{
-                background: active === item
-                  ? (isStreaks ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.08)')
-                  : 'transparent',
-                border: active === item
-                  ? (isStreaks ? '1px solid rgba(249,115,22,0.35)' : '1px solid rgba(255,255,255,0.12)')
-                  : '1px solid transparent',
-                borderRadius: '24px',
-                padding: '8px 20px',
-                cursor: 'pointer',
+                background: active === item ? (isStreaks ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.08)') : 'transparent',
+                border: active === item ? (isStreaks ? '1px solid rgba(249,115,22,0.35)' : '1px solid rgba(255,255,255,0.12)') : '1px solid transparent',
+                borderRadius: '24px', padding: '8px 20px', cursor: 'pointer',
                 color: active === item ? (isStreaks ? '#fb923c' : '#f0ece3') : '#666',
-                fontFamily: 'Bricolage Grotesque, sans-serif',
-                fontWeight: '700',
-                fontSize: '0.85rem',
-                letterSpacing: '0.01em',
-                transition: 'all 0.2s',
+                fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '0.85rem',
+                letterSpacing: '0.01em', transition: 'all 0.2s',
                 backdropFilter: active === item ? 'blur(10px)' : 'none',
               }}
               whileHover={{ color: isStreaks ? '#fb923c' : '#f0ece3' }}
@@ -983,7 +663,7 @@ function Navbar({ active, setActive }) {
           );
         })}
       </div>
-    </nav>
+    </motion.nav>
   );
 }
 
