@@ -1,15 +1,43 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// ─── PERSIST TO WINDOW STORAGE (no localStorage) ─────────────────────────────
-const memStore = {};
-function useMemStorage(key, defaultValue) {
-  const [value, setValue] = useState(() => {
-    if (memStore[key] !== undefined) return memStore[key];
-    return defaultValue;
-  });
-  useEffect(() => { memStore[key] = value; }, [key, value]);
-  return [value, setValue];
+// ─── PERSIST TO window.storage (survives refresh) ─────────────────────────────
+function useStorage(key, defaultValue) {
+  const [value, setValue] = useState(defaultValue);
+  const [loaded, setLoaded] = useState(false);
+
+  // Load from storage on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await window.storage.get(key);
+        if (!cancelled) {
+          if (result && result.value !== undefined) {
+            setValue(JSON.parse(result.value));
+          }
+          setLoaded(true);
+        }
+      } catch {
+        if (!cancelled) setLoaded(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [key]);
+
+  // Save to storage whenever value changes (after initial load)
+  useEffect(() => {
+    if (!loaded) return;
+    (async () => {
+      try {
+        await window.storage.set(key, JSON.stringify(value));
+      } catch (e) {
+        console.error('Storage save failed:', e);
+      }
+    })();
+  }, [key, value, loaded]);
+
+  return [value, setValue, loaded];
 }
 
 const fontStyle = `
@@ -92,6 +120,23 @@ const fontStyle = `
   @keyframes pulse-glow {
     0%, 100% { box-shadow: 0 0 12px #f97316aa; }
     50% { box-shadow: 0 0 24px #f97316cc, 0 0 40px #f9731666; }
+  }
+
+  .saving-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    color: #86efac;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 `;
 
@@ -258,12 +303,14 @@ function PasswordGate({ onUnlock }) {
 }
 
 // ─── LINKS PAGE ───────────────────────────────────────────────────────────────
-function LinksPage() {
-  const [links, setLinks] = useMemStorage('mine_links', [
-    { id: 1, name: 'LinkedIn', url: 'https://linkedin.com', color: '#60a5fa' },
-    { id: 2, name: 'GitHub', url: 'https://github.com', color: '#c084fc' },
-    { id: 3, name: 'Dribbble', url: 'https://dribbble.com', color: '#f87171' },
-  ]);
+const DEFAULT_LINKS = [
+  { id: 1, name: 'LinkedIn', url: 'https://linkedin.com', color: '#60a5fa' },
+  { id: 2, name: 'GitHub', url: 'https://github.com', color: '#c084fc' },
+  { id: 3, name: 'Dribbble', url: 'https://dribbble.com', color: '#f87171' },
+];
+
+function LinksPage({ showSaved }) {
+  const [links, setLinks, loaded] = useStorage('mine_links', DEFAULT_LINKS);
   const [modal, setModal] = useState(false);
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
@@ -274,9 +321,12 @@ function LinksPage() {
     const color = LINK_COLORS[links.length % LINK_COLORS.length];
     setLinks(l => [...l, { id: Date.now(), name, url: url.startsWith('http') ? url : 'https://' + url, color }]);
     setName(''); setUrl(''); setModal(false);
+    showSaved();
   };
-  const doDelete = () => { setLinks(l => l.filter(x => x.id !== confirmId)); setConfirmId(null); };
+  const doDelete = () => { setLinks(l => l.filter(x => x.id !== confirmId)); setConfirmId(null); showSaved(); };
   const confirmLabel = links.find(l => l.id === confirmId)?.name ?? '';
+
+  if (!loaded) return <LoadingSpinner />;
 
   return (
     <div style={{ padding: '40px 0' }}>
@@ -326,13 +376,26 @@ function LinksPage() {
   );
 }
 
+// ─── LOADING SPINNER ──────────────────────────────────────────────────────────
+function LoadingSpinner() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '12px' }}>
+      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+        style={{ width: 24, height: 24, border: '2px solid #2a2a2a', borderTopColor: '#c084fc', borderRadius: '50%' }} />
+      <span style={{ fontFamily: 'DM Sans, sans-serif', color: '#555', fontSize: '0.9rem' }}>Loading your data…</span>
+    </div>
+  );
+}
+
 // ─── REMINDERS PAGE ──────────────────────────────────────────────────────────
-function RemindersPage() {
-  const [notes, setNotes] = useMemStorage('mine_reminders', [
-    { id: 1, title: 'Call Mom 📞', body: 'Sunday evening, don\'t forget!', palette: 0 },
-    { id: 2, title: 'Drink water 💧', body: '8 glasses a day keeps the doctor away.', palette: 1 },
-    { id: 3, title: 'Read 30 min', body: 'Before bed. No phone.', palette: 3 },
-  ]);
+const DEFAULT_REMINDERS = [
+  { id: 1, title: 'Call Mom 📞', body: "Sunday evening, don't forget!", palette: 0 },
+  { id: 2, title: 'Drink water 💧', body: '8 glasses a day keeps the doctor away.', palette: 1 },
+  { id: 3, title: 'Read 30 min', body: 'Before bed. No phone.', palette: 3 },
+];
+
+function RemindersPage({ showSaved }) {
+  const [notes, setNotes, loaded] = useStorage('mine_reminders', DEFAULT_REMINDERS);
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [title, setTitle] = useState('');
@@ -346,9 +409,12 @@ function RemindersPage() {
     if (editId) { setNotes(n => n.map(x => x.id === editId ? { ...x, title, body } : x)); }
     else { setNotes(n => [...n, { id: Date.now(), title, body, palette: n.length % PASTEL.length }]); }
     setModal(false);
+    showSaved();
   };
-  const doDelete = () => { setNotes(n => n.filter(x => x.id !== confirmId)); setConfirmId(null); };
+  const doDelete = () => { setNotes(n => n.filter(x => x.id !== confirmId)); setConfirmId(null); showSaved(); };
   const confirmLabel = notes.find(n => n.id === confirmId)?.title ?? '';
+
+  if (!loaded) return <LoadingSpinner />;
 
   return (
     <div style={{ padding: '40px 0' }}>
@@ -399,12 +465,14 @@ function RemindersPage() {
 }
 
 // ─── ROADMAP PAGE ─────────────────────────────────────────────────────────────
-function RoadmapPage() {
-  const [pages, setPages] = useMemStorage('mine_roadmap', [
-    { id: 1, title: 'Learn React Advanced', body: 'Custom hooks, context patterns, performance optimization with memo and useMemo.', book: 0 },
-    { id: 2, title: 'Build Portfolio', body: 'Design it. Ship it. Make it unforgettable.', book: 1 },
-    { id: 3, title: 'Open Source Contribution', body: 'Pick one project. One PR. Just start.', book: 2 },
-  ]);
+const DEFAULT_ROADMAP = [
+  { id: 1, title: 'Learn React Advanced', body: 'Custom hooks, context patterns, performance optimization with memo and useMemo.', book: 0 },
+  { id: 2, title: 'Build Portfolio', body: 'Design it. Ship it. Make it unforgettable.', book: 1 },
+  { id: 3, title: 'Open Source Contribution', body: 'Pick one project. One PR. Just start.', book: 2 },
+];
+
+function RoadmapPage({ showSaved }) {
+  const [pages, setPages, loaded] = useStorage('mine_roadmap', DEFAULT_ROADMAP);
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [title, setTitle] = useState('');
@@ -418,9 +486,12 @@ function RoadmapPage() {
     if (editId) { setPages(ps => ps.map(x => x.id === editId ? { ...x, title, body } : x)); }
     else { setPages(ps => [...ps, { id: Date.now(), title, body, book: ps.length % BOOK_COLORS.length }]); }
     setModal(false);
+    showSaved();
   };
-  const doDelete = () => { setPages(ps => ps.filter(x => x.id !== confirmId)); setConfirmId(null); };
+  const doDelete = () => { setPages(ps => ps.filter(x => x.id !== confirmId)); setConfirmId(null); showSaved(); };
   const confirmLabel = pages.find(p => p.id === confirmId)?.title ?? '';
+
+  if (!loaded) return <LoadingSpinner />;
 
   return (
     <div style={{ padding: '40px 0' }}>
@@ -492,8 +563,8 @@ function calcStreak(entries) {
 }
 
 // ─── STREAKS PAGE ─────────────────────────────────────────────────────────────
-function StreaksPage() {
-  const [entries, setEntries] = useMemStorage('mine_streaks', []);
+function StreaksPage({ showSaved }) {
+  const [entries, setEntries, loaded] = useStorage('mine_streaks', []);
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [title, setTitle] = useState('');
@@ -511,10 +582,13 @@ function StreaksPage() {
     if (editId) { setEntries(es => es.map(x => x.id === editId ? { ...x, title, body, date: entryDate } : x)); }
     else { setEntries(es => [...es, { id: Date.now(), title, body, date: entryDate, book: es.length % STREAK_BOOK_COLORS.length }]); }
     setModal(false);
+    showSaved();
   };
-  const doDelete = () => { setEntries(es => es.filter(x => x.id !== confirmId)); setConfirmId(null); };
+  const doDelete = () => { setEntries(es => es.filter(x => x.id !== confirmId)); setConfirmId(null); showSaved(); };
   const confirmLabel = entries.find(e => e.id === confirmId)?.title ?? '';
   const sorted = [...entries].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  if (!loaded) return <LoadingSpinner />;
 
   return (
     <div style={{ padding: '40px 0' }}>
@@ -593,7 +667,7 @@ function StreaksPage() {
   );
 }
 
-// ─── NAVBAR — hides on scroll down, shows on scroll up ───────────────────────
+// ─── NAVBAR ───────────────────────────────────────────────────────────────────
 const NAV_ITEMS = ['Links', 'Reminders', 'Roadmap', 'Streaks'];
 
 function Navbar({ active, setActive }) {
@@ -603,13 +677,8 @@ function Navbar({ active, setActive }) {
   useEffect(() => {
     const onScroll = () => {
       const currentY = window.scrollY;
-      // always show when near top
       if (currentY < 10) { setVisible(true); lastY.current = currentY; return; }
-      if (currentY < lastY.current) {
-        setVisible(true);   // scrolling UP → show
-      } else {
-        setVisible(false);  // scrolling DOWN → hide
-      }
+      if (currentY < lastY.current) { setVisible(true); } else { setVisible(false); }
       lastY.current = currentY;
     };
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -620,14 +689,7 @@ function Navbar({ active, setActive }) {
     <motion.nav
       animate={{ y: visible ? 0 : -80 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
-      style={{
-        position: 'fixed', top: 0, left: 0, right: 0,
-        zIndex: 100,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 48px',
-        height: '64px',
-        background: 'transparent',   // ← unchanged, stays transparent
-      }}
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', height: '64px', background: 'transparent' }}
     >
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
         <span className="syne" style={{ fontSize: '1.2rem', color: '#f0ece3', letterSpacing: '-0.01em' }}>
@@ -635,29 +697,14 @@ function Navbar({ active, setActive }) {
           <span style={{ WebkitTextFillColor: 'initial' }}>🌻</span>
         </span>
       </motion.div>
-
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         {NAV_ITEMS.map((item, i) => {
           const isStreaks = item === 'Streaks';
           return (
-            <motion.button
-              key={item}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.07 }}
+            <motion.button key={item} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.07 }}
               onClick={() => setActive(item)}
-              style={{
-                background: active === item ? (isStreaks ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.08)') : 'transparent',
-                border: active === item ? (isStreaks ? '1px solid rgba(249,115,22,0.35)' : '1px solid rgba(255,255,255,0.12)') : '1px solid transparent',
-                borderRadius: '24px', padding: '8px 20px', cursor: 'pointer',
-                color: active === item ? (isStreaks ? '#fb923c' : '#f0ece3') : '#666',
-                fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '0.85rem',
-                letterSpacing: '0.01em', transition: 'all 0.2s',
-                backdropFilter: active === item ? 'blur(10px)' : 'none',
-              }}
-              whileHover={{ color: isStreaks ? '#fb923c' : '#f0ece3' }}
-              whileTap={{ scale: 0.96 }}
-            >
+              style={{ background: active === item ? (isStreaks ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.08)') : 'transparent', border: active === item ? (isStreaks ? '1px solid rgba(249,115,22,0.35)' : '1px solid rgba(255,255,255,0.12)') : '1px solid transparent', borderRadius: '24px', padding: '8px 20px', cursor: 'pointer', color: active === item ? (isStreaks ? '#fb923c' : '#f0ece3') : '#666', fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '0.85rem', letterSpacing: '0.01em', transition: 'all 0.2s', backdropFilter: active === item ? 'blur(10px)' : 'none' }}
+              whileHover={{ color: isStreaks ? '#fb923c' : '#f0ece3' }} whileTap={{ scale: 0.96 }}>
               {isStreaks ? '🔥 Streaks' : item}
             </motion.button>
           );
@@ -667,16 +714,44 @@ function Navbar({ active, setActive }) {
   );
 }
 
+// ─── SAVED TOAST ──────────────────────────────────────────────────────────────
+function SavedToast({ show }) {
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+          className="saving-indicator"
+        >
+          <span>✓</span> Saved to your account
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [active, setActive] = useState('Links');
   const [unlocked, setUnlocked] = useState(false);
+  const [showSavedToast, setShowSavedToast] = useState(false);
+  const toastTimer = useRef(null);
+
+  const showSaved = () => {
+    setShowSavedToast(true);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setShowSavedToast(false), 2200);
+  };
+
+  const pageProps = { showSaved };
 
   const pages = {
-    Links: <LinksPage />,
-    Reminders: <RemindersPage />,
-    Roadmap: <RoadmapPage />,
-    Streaks: <StreaksPage />,
+    Links: <LinksPage {...pageProps} />,
+    Reminders: <RemindersPage {...pageProps} />,
+    Roadmap: <RoadmapPage {...pageProps} />,
+    Streaks: <StreaksPage {...pageProps} />,
   };
 
   if (!unlocked) return (
@@ -692,15 +767,10 @@ export default function App() {
       <div className="grain" />
       <div className="mesh-bg" />
       <Navbar active={active} setActive={setActive} />
+      <SavedToast show={showSavedToast} />
       <main style={{ position: 'relative', zIndex: 1, maxWidth: '1100px', margin: '0 auto', padding: '64px 48px 80px', minHeight: '100vh' }}>
         <AnimatePresence mode="wait">
-          <motion.div
-            key={active}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-          >
+          <motion.div key={active} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
             {pages[active]}
           </motion.div>
         </AnimatePresence>
