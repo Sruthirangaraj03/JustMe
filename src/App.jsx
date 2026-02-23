@@ -1,18 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// ─── PERSIST TO LOCALSTORAGE ─────────────────────────────────────────────────
-function useLocalStorage(key, defaultValue) {
+// ─── PERSIST TO WINDOW STORAGE (no localStorage) ─────────────────────────────
+const memStore = {};
+function useMemStorage(key, defaultValue) {
   const [value, setValue] = useState(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : defaultValue;
-    } catch { return defaultValue; }
+    if (memStore[key] !== undefined) return memStore[key];
+    return defaultValue;
   });
-  useEffect(() => {
-    try { localStorage.setItem(key, JSON.stringify(value)); }
-    catch {}
-  }, [key, value]);
+  useEffect(() => { memStore[key] = value; }, [key, value]);
   return [value, setValue];
 }
 
@@ -86,6 +82,20 @@ const fontStyle = `
     border-width: 0 20px 20px 0;
     border-color: transparent var(--page-fold) transparent transparent;
   }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
+  }
+
+  .streak-badge {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 12px #f97316aa; }
+    50% { box-shadow: 0 0 24px #f97316cc, 0 0 40px #f9731666; }
+  }
 `;
 
 // ─── ICONS ───────────────────────────────────────────────────────────────────
@@ -133,7 +143,6 @@ function Modal({ isOpen, onClose, children, title }) {
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center"
         style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         onClick={onClose}
       >
@@ -218,6 +227,15 @@ const BOOK_COLORS = [
   { color: '#f87171', fold: '#fca5a5' },
 ];
 
+// ─── STREAK BOOK COLORS ──────────────────────────────────────────────────────
+const STREAK_BOOK_COLORS = [
+  { color: '#fb923c', fold: '#fed7aa' },
+  { color: '#fbbf24', fold: '#fde68a' },
+  { color: '#f87171', fold: '#fca5a5' },
+  { color: '#c084fc', fold: '#e9d5ff' },
+  { color: '#86efac', fold: '#bbf7d0' },
+];
+
 const rotations = [-1.8, 1.2, -0.8, 2, -1.5, 0.9, -2.2, 1.6];
 
 // ─── CONFIRM DELETE MODAL ────────────────────────────────────────────────────
@@ -240,13 +258,13 @@ function ConfirmDelete({ isOpen, onConfirm, onCancel, label }) {
         >
           <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🗑️</div>
           <p style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '1.1rem', color: '#f0ece3', marginBottom: '8px' }}>Delete this?</p>
-          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', color: '#666', marginBottom: '24px' }}>"{label}" will be gone forever 🥺</p>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', color: '#666', marginBottom: '24px' }}>"{label}" will be gone forever🥺</p>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={onCancel} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #2e2e2e', background: 'transparent', color: '#888', fontFamily: 'DM Sans, sans-serif', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}>
-              Cancel 🙅‍♀️
+              Cancel
             </button>
             <button onClick={onConfirm} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #f87171, #fb923c)', color: '#fff', fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', cursor: 'pointer', fontSize: '0.9rem' }}>
-              Yes, delete 🗑️
+              Yes, delete
             </button>
           </div>
         </motion.div>
@@ -263,7 +281,6 @@ function PasswordGate({ onUnlock }) {
 
   const attempt = () => {
     if (pw === 'Switzerland') {
-      sessionStorage.setItem('justme_unlocked', '1');
       onUnlock();
     } else {
       setError(true);
@@ -289,7 +306,7 @@ function PasswordGate({ onUnlock }) {
       >
         <div style={{ fontSize: '4rem', marginBottom: '16px' }}>🐧</div>
         <h1 style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '1.8rem', color: '#f0ece3', marginBottom: '8px' }}>
-          Only Sruthi can enter🔐
+          Only Sruthi can enter
         </h1>
         <p style={{ fontFamily: 'DM Sans, sans-serif', color: '#555', fontSize: '0.9rem', marginBottom: '32px' }}>
           It's her world✨
@@ -300,7 +317,7 @@ function PasswordGate({ onUnlock }) {
             value={pw}
             onChange={e => { setPw(e.target.value); setError(false); }}
             onKeyDown={e => e.key === 'Enter' && attempt()}
-            placeholder="Enter the secret🤫"
+            placeholder="Enter the secret"
             autoFocus
             style={{
               ...inputStyle,
@@ -316,7 +333,7 @@ function PasswordGate({ onUnlock }) {
         </div>
         {error && (
           <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} style={{ color: '#f87171', fontSize: '0.85rem', marginBottom: '16px', fontFamily: 'DM Sans, sans-serif' }}>
-            Wrong password 😅 Try again!
+            Wrong password😅
           </motion.p>
         )}
         <motion.button
@@ -324,7 +341,7 @@ function PasswordGate({ onUnlock }) {
           onClick={attempt}
           style={{ ...btnPrimary, width: '280px', padding: '14px', fontSize: '1rem' }}
         >
-          Enter 🌟
+          Enter
         </motion.button>
       </motion.div>
     </motion.div>
@@ -333,7 +350,7 @@ function PasswordGate({ onUnlock }) {
 
 // ─── LINKS PAGE ───────────────────────────────────────────────────────────────
 function LinksPage() {
-  const [links, setLinks] = useLocalStorage('mine_links', [
+  const [links, setLinks] = useMemStorage('mine_links', [
     { id: 1, name: 'LinkedIn', url: 'https://linkedin.com', color: '#60a5fa' },
     { id: 2, name: 'GitHub', url: 'https://github.com', color: '#c084fc' },
     { id: 3, name: 'Dribbble', url: 'https://dribbble.com', color: '#f87171' },
@@ -432,7 +449,7 @@ function LinksPage() {
 
 // ─── REMINDERS PAGE ──────────────────────────────────────────────────────────
 function RemindersPage() {
-  const [notes, setNotes] = useLocalStorage('mine_reminders', [
+  const [notes, setNotes] = useMemStorage('mine_reminders', [
     { id: 1, title: 'Call Mom 📞', body: 'Sunday evening, don\'t forget!', palette: 0 },
     { id: 2, title: 'Drink water 💧', body: '8 glasses a day keeps the doctor away.', palette: 1 },
     { id: 3, title: 'Read 30 min', body: 'Before bed. No phone.', palette: 3 },
@@ -506,42 +523,13 @@ function RemindersPage() {
                   opacity: 0.8,
                 }} />
                 <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px' }}>
-                  <button
-                    onClick={e => { e.stopPropagation(); openEdit(note); }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: p.accent, opacity: 0.7 }}
-                  >
-                    <EditIcon />
-                  </button>
-                  <button
-                    onClick={e => { e.stopPropagation(); setConfirmId(note.id); }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', opacity: 0.7 }}
-                  >
-                    <XIcon />
-                  </button>
+                  <button onClick={e => { e.stopPropagation(); openEdit(note); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: p.accent, opacity: 0.7 }}><EditIcon /></button>
+                  <button onClick={e => { e.stopPropagation(); setConfirmId(note.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', opacity: 0.7 }}><XIcon /></button>
                 </div>
-                <p style={{
-                  fontFamily: 'Bricolage Grotesque, sans-serif',
-                  fontStyle: 'normal',
-                  fontSize: '1.1rem',
-                  fontWeight: '700',
-                  color: '#000000',
-                  marginTop: '12px',
-                  marginBottom: '8px',
-                  lineHeight: 1.3,
-                }}>
+                <p style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontStyle: 'normal', fontSize: '1.1rem', fontWeight: '700', color: '#000000', marginTop: '12px', marginBottom: '8px', lineHeight: 1.3 }}>
                   {note.title}
                 </p>
-                <p style={{
-                  fontFamily: 'Bricolage Grotesque, sans-serif',
-                  fontStyle: 'normal',
-                  fontSize: '0.85rem',
-                  fontWeight: '400',
-                  color: '#111111',
-                  lineHeight: 1.65,
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  overflowWrap: 'break-word',
-                }}>
+                <p style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontStyle: 'normal', fontSize: '0.85rem', fontWeight: '400', color: '#111111', lineHeight: 1.65, whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                   {note.body}
                 </p>
                 <div style={{ position: 'absolute', bottom: '10px', right: '12px', width: '8px', height: '8px', borderRadius: '50%', background: p.accent, opacity: 0.6 }} />
@@ -554,17 +542,7 @@ function RemindersPage() {
           onClick={openAdd}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.97 }}
-          style={{
-            background: '#1a1a1a',
-            border: '2px dashed #2a2a2a',
-            borderRadius: '4px',
-            width: '240px', minHeight: '180px',
-            cursor: 'pointer',
-            color: '#444',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', gap: '8px',
-            flexShrink: 0,
-          }}
+          style={{ background: '#1a1a1a', border: '2px dashed #2a2a2a', borderRadius: '4px', width: '240px', minHeight: '180px', cursor: 'pointer', color: '#444', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', flexShrink: 0 }}
         >
           <PlusIcon />
           <span style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '1rem' }}>New note</span>
@@ -572,18 +550,8 @@ function RemindersPage() {
       </div>
 
       <Modal isOpen={modal} onClose={() => setModal(false)} title={editId ? 'Edit note ✦' : 'New sticky note ✦'}>
-        <input
-          style={inputStyle}
-          placeholder="Title"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-        />
-        <textarea
-          style={textareaStyle}
-          placeholder="What's on your mind?"
-          value={body}
-          onChange={e => setBody(e.target.value)}
-        />
+        <input style={inputStyle} placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} />
+        <textarea style={textareaStyle} placeholder="What's on your mind?" value={body} onChange={e => setBody(e.target.value)} />
         <button style={btnPrimary} onClick={save}>{editId ? 'Save Changes' : 'Add Note'}</button>
       </Modal>
     </div>
@@ -592,7 +560,7 @@ function RemindersPage() {
 
 // ─── ROADMAP PAGE ─────────────────────────────────────────────────────────────
 function RoadmapPage() {
-  const [pages, setPages] = useLocalStorage('mine_roadmap', [
+  const [pages, setPages] = useMemStorage('mine_roadmap', [
     { id: 1, title: 'Learn React Advanced', body: 'Custom hooks, context patterns, performance optimization with memo and useMemo.', book: 0 },
     { id: 2, title: 'Build Portfolio', body: 'Design it. Ship it. Make it unforgettable.', book: 1 },
     { id: 3, title: 'Open Source Contribution', body: 'Pick one project. One PR. Just start.', book: 2 },
@@ -655,78 +623,21 @@ function RoadmapPage() {
                 }}
                 onClick={() => openEdit(pg)}
               >
-                {/* dog ear */}
-                <div style={{
-                  position: 'absolute', top: 0, right: 0,
-                  width: 0, height: 0,
-                  borderStyle: 'solid',
-                  borderWidth: '0 24px 24px 0',
-                  borderColor: `transparent ${b.fold} transparent transparent`,
-                }} />
-                
-                {/* ruled lines */}
+                <div style={{ position: 'absolute', top: 0, right: 0, width: 0, height: 0, borderStyle: 'solid', borderWidth: '0 24px 24px 0', borderColor: `transparent ${b.fold} transparent transparent` }} />
                 {[60, 90, 120, 150, 180].map(t => (
-                  <div key={t} style={{
-                    position: 'absolute',
-                    left: '20px', right: '16px',
-                    top: `${t}px`,
-                    height: '1px',
-                    background: '#e8e2d8',
-                  }} />
+                  <div key={t} style={{ position: 'absolute', left: '20px', right: '16px', top: `${t}px`, height: '1px', background: '#e8e2d8' }} />
                 ))}
-
                 <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '4px', zIndex: 1 }}>
-                  <button
-                    onClick={e => { e.stopPropagation(); openEdit(pg); }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: b.color, opacity: 0.7 }}
-                  >
-                    <EditIcon />
-                  </button>
-                  <button
-                    onClick={e => { e.stopPropagation(); setConfirmId(pg.id); }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', opacity: 0.7 }}
-                  >
-                    <XIcon />
-                  </button>
+                  <button onClick={e => { e.stopPropagation(); openEdit(pg); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: b.color, opacity: 0.7 }}><EditIcon /></button>
+                  <button onClick={e => { e.stopPropagation(); setConfirmId(pg.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', opacity: 0.7 }}><XIcon /></button>
                 </div>
-
-                <div style={{
-                  fontSize: '0.7rem',
-                  fontWeight: '700',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color: b.color,
-                  marginBottom: '8px',
-                  fontFamily: 'Bricolage Grotesque, sans-serif',
-                }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: b.color, marginBottom: '8px', fontFamily: 'Bricolage Grotesque, sans-serif' }}>
                   Chapter {i + 1}
                 </div>
-
-                <h3 style={{
-                  fontFamily: 'Bricolage Grotesque, sans-serif',
-                  fontSize: '1.25rem',
-                  fontWeight: '700',
-                  color: '#1a1a1a',
-                  marginBottom: '12px',
-                  lineHeight: 1.25,
-                  position: 'relative',
-                  zIndex: 1,
-                }}>
+                <h3 style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontSize: '1.25rem', fontWeight: '700', color: '#1a1a1a', marginBottom: '12px', lineHeight: 1.25, position: 'relative', zIndex: 1 }}>
                   {pg.title}
                 </h3>
-
-                {/* ✅ FIX: white-space: pre-wrap preserves line breaks exactly as typed, color forced black */}
-                <p style={{
-                  fontSize: '0.85rem',
-                  color: '#1a1a1a',
-                  lineHeight: 1.65,
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontWeight: '500',
-                  position: 'relative',
-                  zIndex: 1,
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}>
+                <p style={{ fontSize: '0.85rem', color: '#1a1a1a', lineHeight: 1.65, fontFamily: 'DM Sans, sans-serif', fontWeight: '500', position: 'relative', zIndex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                   {pg.body}
                 </p>
               </motion.div>
@@ -738,18 +649,7 @@ function RoadmapPage() {
           onClick={openAdd}
           whileHover={{ y: -4 }}
           whileTap={{ scale: 0.97 }}
-          style={{
-            background: '#141414',
-            border: '2px dashed #2a2a2a',
-            borderRadius: '0 12px 12px 0',
-            borderLeft: '5px dashed #2a2a2a',
-            padding: '24px',
-            cursor: 'pointer',
-            color: '#444',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', gap: '8px',
-            minHeight: '180px',
-          }}
+          style={{ background: '#141414', border: '2px dashed #2a2a2a', borderRadius: '0 12px 12px 0', borderLeft: '5px dashed #2a2a2a', padding: '24px', cursor: 'pointer', color: '#444', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', minHeight: '180px' }}
         >
           <PlusIcon />
           <span style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '1rem' }}>New chapter</span>
@@ -757,26 +657,278 @@ function RoadmapPage() {
       </div>
 
       <Modal isOpen={modal} onClose={() => setModal(false)} title={editId ? 'Edit chapter ✦' : 'New chapter ✦'}>
-        <input
-          style={inputStyle}
-          placeholder="Chapter title"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-        />
-        <textarea
-          style={textareaStyle}
-          placeholder="What's this chapter about?"
-          value={body}
-          onChange={e => setBody(e.target.value)}
-        />
+        <input style={inputStyle} placeholder="Chapter title" value={title} onChange={e => setTitle(e.target.value)} />
+        <textarea style={textareaStyle} placeholder="What's this chapter about?" value={body} onChange={e => setBody(e.target.value)} />
         <button style={btnPrimary} onClick={save}>{editId ? 'Save Changes' : 'Add Chapter'}</button>
       </Modal>
     </div>
   );
 }
 
+// ─── STREAK HELPERS ───────────────────────────────────────────────────────────
+function getTodayStr() {
+  const d = new Date();
+  return d.toISOString().slice(0, 10); // "YYYY-MM-DD"
+}
+
+function formatDateLabel(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function calcStreak(entries) {
+  // entries is array of { date: "YYYY-MM-DD", ... }
+  if (!entries || entries.length === 0) return 0;
+  const dates = [...new Set(entries.map(e => e.date))].sort().reverse();
+  if (!dates.length) return 0;
+
+  let streak = 0;
+  let check = getTodayStr();
+
+  // If today has no entry, check if yesterday does (streak may still be ongoing)
+  if (dates[0] !== check) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = yesterday.toISOString().slice(0, 10);
+    if (dates[0] !== yStr) return 0;
+    check = yStr;
+  }
+
+  for (const d of dates) {
+    if (d === check) {
+      streak++;
+      const prev = new Date(check + 'T00:00:00');
+      prev.setDate(prev.getDate() - 1);
+      check = prev.toISOString().slice(0, 10);
+    } else break;
+  }
+  return streak;
+}
+
+// ─── STREAKS PAGE ─────────────────────────────────────────────────────────────
+function StreaksPage() {
+  const [entries, setEntries] = useMemStorage('mine_streaks', []);
+  const [modal, setModal] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [entryDate, setEntryDate] = useState(getTodayStr());
+  const [confirmId, setConfirmId] = useState(null);
+
+  const streak = calcStreak(entries);
+  const hasEntryToday = entries.some(e => e.date === getTodayStr());
+
+  const openAdd = () => {
+    setEditId(null);
+    setTitle('');
+    setBody('');
+    setEntryDate(getTodayStr());
+    setModal(true);
+  };
+
+  const openEdit = (e) => {
+    setEditId(e.id);
+    setTitle(e.title);
+    setBody(e.body);
+    setEntryDate(e.date || getTodayStr());
+    setModal(true);
+  };
+
+  const save = () => {
+    if (!title.trim()) return;
+    if (editId) {
+      setEntries(es => es.map(x => x.id === editId ? { ...x, title, body, date: entryDate } : x));
+    } else {
+      const book = entries.length % STREAK_BOOK_COLORS.length;
+      setEntries(es => [...es, { id: Date.now(), title, body, date: entryDate, book }]);
+    }
+    setModal(false);
+  };
+
+  const doDelete = () => { setEntries(es => es.filter(x => x.id !== confirmId)); setConfirmId(null); };
+  const confirmLabel = entries.find(e => e.id === confirmId)?.title ?? '';
+
+  // Sort entries: newest date first
+  const sorted = [...entries].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  return (
+    <div style={{ padding: '40px 0' }}>
+      <ConfirmDelete isOpen={!!confirmId} onConfirm={doDelete} onCancel={() => setConfirmId(null)} label={confirmLabel} />
+
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px', marginBottom: '40px' }}>
+        <h2 className="syne" style={{ fontSize: '2.6rem', color: '#f0ece3', letterSpacing: '-0.01em', fontWeight: '600' }}>Streaks</h2>
+        <span className="sans" style={{ fontSize: '0.9rem', color: '#555', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase' }}>daily journal</span>
+
+        {/* Streak badge */}
+        {streak > 0 && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20, delay: 0.2 }}
+            className="streak-badge"
+            style={{
+              marginLeft: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'linear-gradient(135deg, #f97316, #fbbf24)',
+              borderRadius: '20px',
+              padding: '6px 14px 6px 10px',
+              boxShadow: '0 0 12px #f97316aa',
+            }}
+          >
+            <span style={{ fontSize: '1.1rem' }}>🔥</span>
+            <span style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '0.95rem', color: '#0d0d0d' }}>
+              {streak} {streak !== 1 ? 's' : ''}
+            </span>
+          </motion.div>
+        )}
+
+        {streak === 0 && entries.length > 0 && (
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '6px 14px 6px 10px' }}>
+            <span style={{ fontSize: '1rem' }}>💤</span>
+            <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: '600', fontSize: '0.85rem', color: '#555' }}>No streak yet</span>
+          </div>
+        )}
+      </div>
+
+      {/* Today's nudge */}
+      {!hasEntryToday && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            marginBottom: '28px',
+            background: '#141414',
+            border: '1px solid #f9731622',
+            borderRadius: '12px',
+            padding: '14px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+          }}
+        >
+          <span style={{ fontSize: '1.2rem' }}>✍️</span>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.88rem', color: '#888' }}>
+            You haven't written today yet — keep the streak alive !
+          </span>
+          <button
+            onClick={openAdd}
+            style={{ marginLeft: 'auto', background: 'linear-gradient(135deg, #f97316, #fbbf24)', border: 'none', borderRadius: '8px', padding: '7px 16px', cursor: 'pointer', fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '0.8rem', color: '#0d0d0d' }}
+          >
+            Write now 🔥
+          </button>
+        </motion.div>
+      )}
+
+      {/* Cards grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
+        <AnimatePresence>
+          {sorted.map((entry, i) => {
+            const b = STREAK_BOOK_COLORS[entry.book ?? i % STREAK_BOOK_COLORS.length];
+            const isToday = entry.date === getTodayStr();
+            return (
+              <motion.div
+                key={entry.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20, scale: 0.95 }}
+                transition={{ delay: i * 0.06 }}
+                whileHover={{ y: -6, boxShadow: '8px 12px 40px rgba(0,0,0,0.4)' }}
+                style={{
+                  background: 'linear-gradient(135deg, #faf8f4 0%, #f0ede6 100%)',
+                  borderLeft: `5px solid ${b.color}`,
+                  borderRadius: '0 12px 12px 0',
+                  padding: '24px 24px 24px 20px',
+                  position: 'relative',
+                  cursor: 'pointer',
+                  boxShadow: isToday ? `4px 8px 24px rgba(0,0,0,0.3), 0 0 0 2px ${b.color}44` : '4px 8px 24px rgba(0,0,0,0.3)',
+                  overflow: 'hidden',
+                }}
+                onClick={() => openEdit(entry)}
+              >
+                {/* dog ear */}
+                <div style={{ position: 'absolute', top: 0, right: 0, width: 0, height: 0, borderStyle: 'solid', borderWidth: '0 24px 24px 0', borderColor: `transparent ${b.fold} transparent transparent` }} />
+
+                {/* ruled lines */}
+                {[60, 90, 120, 150, 180].map(t => (
+                  <div key={t} style={{ position: 'absolute', left: '20px', right: '16px', top: `${t}px`, height: '1px', background: '#e8e2d8' }} />
+                ))}
+
+                {/* Today badge */}
+                {isToday && (
+                  <div style={{
+                    position: 'absolute', top: '10px', left: '10px',
+                    background: b.color, borderRadius: '6px',
+                    padding: '2px 8px',
+                    fontSize: '0.6rem', fontWeight: '700',
+                    fontFamily: 'Bricolage Grotesque, sans-serif',
+                    color: '#0d0d0d', letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                  }}>Today</div>
+                )}
+
+                {/* Edit / Delete */}
+                <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '4px', zIndex: 1 }}>
+                  <button onClick={e => { e.stopPropagation(); openEdit(entry); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: b.color, opacity: 0.7 }}><EditIcon /></button>
+                  <button onClick={e => { e.stopPropagation(); setConfirmId(entry.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', opacity: 0.7 }}><XIcon /></button>
+                </div>
+
+                {/* Day label */}
+                <div style={{ fontSize: '0.7rem', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: b.color, marginBottom: '8px', fontFamily: 'Bricolage Grotesque, sans-serif', marginTop: isToday ? '16px' : '0' }}>
+                  Day {sorted.length - i} — {formatDateLabel(entry.date)}
+                </div>
+
+                <h3 style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontSize: '1.25rem', fontWeight: '700', color: '#1a1a1a', marginBottom: '12px', lineHeight: 1.25, position: 'relative', zIndex: 1 }}>
+                  {entry.title}
+                </h3>
+
+                <p style={{ fontSize: '0.85rem', color: '#1a1a1a', lineHeight: 1.65, fontFamily: 'DM Sans, sans-serif', fontWeight: '500', position: 'relative', zIndex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {entry.body}
+                </p>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+
+        <motion.button
+          onClick={openAdd}
+          whileHover={{ y: -4 }}
+          whileTap={{ scale: 0.97 }}
+          style={{ background: '#141414', border: '2px dashed #2a2a2a', borderRadius: '0 12px 12px 0', borderLeft: '5px dashed #2a2a2a', padding: '24px', cursor: 'pointer', color: '#444', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', minHeight: '180px' }}
+        >
+          <PlusIcon />
+          <span style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: '700', fontSize: '1rem' }}>New day</span>
+        </motion.button>
+      </div>
+
+      {/* Modal */}
+      <Modal isOpen={modal} onClose={() => setModal(false)} title={editId ? 'Edit entry ✦' : 'New day entry ✦'}>
+        {/* Date picker */}
+        <div style={{ marginBottom: '12px' }}>
+          <label style={{ display: 'block', fontFamily: 'DM Sans, sans-serif', fontSize: '0.78rem', color: '#666', marginBottom: '6px', letterSpacing: '0.04em', fontWeight: '600', textTransform: 'uppercase' }}>
+            📅 Pick a date
+          </label>
+          <input
+            type="date"
+            value={entryDate}
+            max={getTodayStr()}
+            onChange={e => setEntryDate(e.target.value)}
+            style={{ ...inputStyle, marginBottom: 0, cursor: 'pointer', colorScheme: 'dark' }}
+          />
+        </div>
+        <input style={inputStyle} placeholder="What's the highlight of today?" value={title} onChange={e => setTitle(e.target.value)} />
+        <textarea style={textareaStyle} placeholder="Write freely... how was your day?" value={body} onChange={e => setBody(e.target.value)} />
+        <button style={btnPrimary} onClick={save}>{editId ? 'Save Changes' : 'Add Entry'}</button>
+      </Modal>
+    </div>
+  );
+}
+
 // ─── NAVBAR ───────────────────────────────────────────────────────────────────
-const NAV_ITEMS = ['Links', 'Reminders', 'Roadmap'];
+const NAV_ITEMS = ['Links', 'Reminders', 'Roadmap', 'Streaks'];
 
 function Navbar({ active, setActive }) {
   return (
@@ -788,45 +940,48 @@ function Navbar({ active, setActive }) {
       height: '64px',
       background: 'transparent',
     }}>
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.1 }}
-      >
+      <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
         <span className="syne" style={{ fontSize: '1.2rem', color: '#f0ece3', letterSpacing: '-0.01em' }}>
           <span style={{ background: 'linear-gradient(90deg, #c084fc, #67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>JustMe</span>
-          <span style={{ WebkitTextFillColor: 'initial' }}> 🐧🌻</span>
+          <span style={{ WebkitTextFillColor: 'initial' }}>🌻</span>
         </span>
       </motion.div>
 
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-        {NAV_ITEMS.map((item, i) => (
-          <motion.button
-            key={item}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 + i * 0.07 }}
-            onClick={() => setActive(item)}
-            style={{
-              background: active === item ? 'rgba(255,255,255,0.08)' : 'transparent',
-              border: active === item ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
-              borderRadius: '24px',
-              padding: '8px 20px',
-              cursor: 'pointer',
-              color: active === item ? '#f0ece3' : '#666',
-              fontFamily: 'Bricolage Grotesque, sans-serif',
-              fontWeight: '700',
-              fontSize: '0.85rem',
-              letterSpacing: '0.01em',
-              transition: 'all 0.2s',
-              backdropFilter: active === item ? 'blur(10px)' : 'none',
-            }}
-            whileHover={{ color: '#f0ece3' }}
-            whileTap={{ scale: 0.96 }}
-          >
-            {item}
-          </motion.button>
-        ))}
+        {NAV_ITEMS.map((item, i) => {
+          const isStreaks = item === 'Streaks';
+          return (
+            <motion.button
+              key={item}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.07 }}
+              onClick={() => setActive(item)}
+              style={{
+                background: active === item
+                  ? (isStreaks ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.08)')
+                  : 'transparent',
+                border: active === item
+                  ? (isStreaks ? '1px solid rgba(249,115,22,0.35)' : '1px solid rgba(255,255,255,0.12)')
+                  : '1px solid transparent',
+                borderRadius: '24px',
+                padding: '8px 20px',
+                cursor: 'pointer',
+                color: active === item ? (isStreaks ? '#fb923c' : '#f0ece3') : '#666',
+                fontFamily: 'Bricolage Grotesque, sans-serif',
+                fontWeight: '700',
+                fontSize: '0.85rem',
+                letterSpacing: '0.01em',
+                transition: 'all 0.2s',
+                backdropFilter: active === item ? 'blur(10px)' : 'none',
+              }}
+              whileHover={{ color: isStreaks ? '#fb923c' : '#f0ece3' }}
+              whileTap={{ scale: 0.96 }}
+            >
+              {isStreaks ? '🔥 Streaks' : item}
+            </motion.button>
+          );
+        })}
       </div>
     </nav>
   );
@@ -835,9 +990,14 @@ function Navbar({ active, setActive }) {
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [active, setActive] = useState('Links');
-  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('justme_unlocked') === '1');
+  const [unlocked, setUnlocked] = useState(false);
 
-  const pages = { Links: <LinksPage />, Reminders: <RemindersPage />, Roadmap: <RoadmapPage /> };
+  const pages = {
+    Links: <LinksPage />,
+    Reminders: <RemindersPage />,
+    Roadmap: <RoadmapPage />,
+    Streaks: <StreaksPage />,
+  };
 
   if (!unlocked) return (
     <>
@@ -851,16 +1011,8 @@ export default function App() {
       <style>{fontStyle}</style>
       <div className="grain" />
       <div className="mesh-bg" />
-
       <Navbar active={active} setActive={setActive} />
-
-      <main style={{
-        position: 'relative', zIndex: 1,
-        maxWidth: '1100px',
-        margin: '0 auto',
-        padding: '64px 48px 80px',
-        minHeight: '100vh',
-      }}>
+      <main style={{ position: 'relative', zIndex: 1, maxWidth: '1100px', margin: '0 auto', padding: '64px 48px 80px', minHeight: '100vh' }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={active}
