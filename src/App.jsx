@@ -1,43 +1,30 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// ─── PERSIST TO window.storage (survives refresh) ─────────────────────────────
+// ─── PERSIST TO localStorage (works after deployment) ─────────────────────────
 function useStorage(key, defaultValue) {
-  const [value, setValue] = useState(defaultValue);
-  const [loaded, setLoaded] = useState(false);
+  const [value, setValue] = useState(() => {
+    try {
+      const item = localStorage.getItem(key);
+      return item !== null ? JSON.parse(item) : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  });
 
-  // Load from storage on mount
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
+  const setValueAndPersist = (updater) => {
+    setValue(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
       try {
-        const result = await window.storage.get(key);
-        if (!cancelled) {
-          if (result && result.value !== undefined) {
-            setValue(JSON.parse(result.value));
-          }
-          setLoaded(true);
-        }
-      } catch {
-        if (!cancelled) setLoaded(true);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [key]);
-
-  // Save to storage whenever value changes (after initial load)
-  useEffect(() => {
-    if (!loaded) return;
-    (async () => {
-      try {
-        await window.storage.set(key, JSON.stringify(value));
+        localStorage.setItem(key, JSON.stringify(next));
       } catch (e) {
-        console.error('Storage save failed:', e);
+        console.error('localStorage save failed:', e);
       }
-    })();
-  }, [key, value, loaded]);
+      return next;
+    });
+  };
 
-  return [value, setValue, loaded];
+  return [value, setValueAndPersist, true]; // always "loaded" since localStorage is sync
 }
 
 const fontStyle = `
@@ -303,14 +290,8 @@ function PasswordGate({ onUnlock }) {
 }
 
 // ─── LINKS PAGE ───────────────────────────────────────────────────────────────
-const DEFAULT_LINKS = [
-  { id: 1, name: 'LinkedIn', url: 'https://linkedin.com', color: '#60a5fa' },
-  { id: 2, name: 'GitHub', url: 'https://github.com', color: '#c084fc' },
-  { id: 3, name: 'Dribbble', url: 'https://dribbble.com', color: '#f87171' },
-];
-
 function LinksPage({ showSaved }) {
-  const [links, setLinks, loaded] = useStorage('mine_links', DEFAULT_LINKS);
+  const [links, setLinks] = useStorage('mine_links', []);
   const [modal, setModal] = useState(false);
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
@@ -326,8 +307,6 @@ function LinksPage({ showSaved }) {
   const doDelete = () => { setLinks(l => l.filter(x => x.id !== confirmId)); setConfirmId(null); showSaved(); };
   const confirmLabel = links.find(l => l.id === confirmId)?.name ?? '';
 
-  if (!loaded) return <LoadingSpinner />;
-
   return (
     <div style={{ padding: '40px 0' }}>
       <ConfirmDelete isOpen={!!confirmId} onConfirm={doDelete} onCancel={() => setConfirmId(null)} label={confirmLabel} />
@@ -335,6 +314,12 @@ function LinksPage({ showSaved }) {
         <h2 className="syne" style={{ fontSize: '2.6rem', color: '#f0ece3', letterSpacing: '-0.01em', fontWeight: '600' }}>My Links</h2>
         <span className="sans" style={{ fontSize: '0.9rem', color: '#555', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: '8px' }}>quick access</span>
       </div>
+      {links.length === 0 && (
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          style={{ fontFamily: 'DM Sans, sans-serif', color: '#444', fontSize: '0.95rem', marginBottom: '32px' }}>
+          No links yet — add your first one ✦
+        </motion.p>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '24px' }}>
         <AnimatePresence>
           {links.map((link, i) => (
@@ -382,20 +367,14 @@ function LoadingSpinner() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '12px' }}>
       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
         style={{ width: 24, height: 24, border: '2px solid #2a2a2a', borderTopColor: '#c084fc', borderRadius: '50%' }} />
-      <span style={{ fontFamily: 'DM Sans, sans-serif', color: '#555', fontSize: '0.9rem' }}>Loading your data…</span>
+      <span style={{ fontFamily: 'DM Sans, sans-serif', color: '#555', fontSize: '0.9rem' }}>Loading…</span>
     </div>
   );
 }
 
 // ─── REMINDERS PAGE ──────────────────────────────────────────────────────────
-const DEFAULT_REMINDERS = [
-  { id: 1, title: 'Call Mom 📞', body: "Sunday evening, don't forget!", palette: 0 },
-  { id: 2, title: 'Drink water 💧', body: '8 glasses a day keeps the doctor away.', palette: 1 },
-  { id: 3, title: 'Read 30 min', body: 'Before bed. No phone.', palette: 3 },
-];
-
 function RemindersPage({ showSaved }) {
-  const [notes, setNotes, loaded] = useStorage('mine_reminders', DEFAULT_REMINDERS);
+  const [notes, setNotes] = useStorage('mine_reminders', []);
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [title, setTitle] = useState('');
@@ -414,8 +393,6 @@ function RemindersPage({ showSaved }) {
   const doDelete = () => { setNotes(n => n.filter(x => x.id !== confirmId)); setConfirmId(null); showSaved(); };
   const confirmLabel = notes.find(n => n.id === confirmId)?.title ?? '';
 
-  if (!loaded) return <LoadingSpinner />;
-
   return (
     <div style={{ padding: '40px 0' }}>
       <ConfirmDelete isOpen={!!confirmId} onConfirm={doDelete} onCancel={() => setConfirmId(null)} label={confirmLabel} />
@@ -423,6 +400,12 @@ function RemindersPage({ showSaved }) {
         <h2 style={{ fontSize: '2.6rem', color: '#f0ece3', letterSpacing: '-0.01em', fontWeight: '700', fontFamily: 'Bricolage Grotesque, sans-serif' }}>Reminders</h2>
         <span className="sans" style={{ fontSize: '0.9rem', color: '#555', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase' }}>notes to self</span>
       </div>
+      {notes.length === 0 && (
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          style={{ fontFamily: 'DM Sans, sans-serif', color: '#444', fontSize: '0.95rem', marginBottom: '32px' }}>
+          No reminders yet — stick your first note ✦
+        </motion.p>
+      )}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
         <AnimatePresence>
           {notes.map((note, i) => {
@@ -465,14 +448,8 @@ function RemindersPage({ showSaved }) {
 }
 
 // ─── ROADMAP PAGE ─────────────────────────────────────────────────────────────
-const DEFAULT_ROADMAP = [
-  { id: 1, title: 'Learn React Advanced', body: 'Custom hooks, context patterns, performance optimization with memo and useMemo.', book: 0 },
-  { id: 2, title: 'Build Portfolio', body: 'Design it. Ship it. Make it unforgettable.', book: 1 },
-  { id: 3, title: 'Open Source Contribution', body: 'Pick one project. One PR. Just start.', book: 2 },
-];
-
 function RoadmapPage({ showSaved }) {
-  const [pages, setPages, loaded] = useStorage('mine_roadmap', DEFAULT_ROADMAP);
+  const [pages, setPages] = useStorage('mine_roadmap', []);
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [title, setTitle] = useState('');
@@ -491,8 +468,6 @@ function RoadmapPage({ showSaved }) {
   const doDelete = () => { setPages(ps => ps.filter(x => x.id !== confirmId)); setConfirmId(null); showSaved(); };
   const confirmLabel = pages.find(p => p.id === confirmId)?.title ?? '';
 
-  if (!loaded) return <LoadingSpinner />;
-
   return (
     <div style={{ padding: '40px 0' }}>
       <ConfirmDelete isOpen={!!confirmId} onConfirm={doDelete} onCancel={() => setConfirmId(null)} label={confirmLabel} />
@@ -500,6 +475,12 @@ function RoadmapPage({ showSaved }) {
         <h2 className="syne" style={{ fontSize: '2.6rem', color: '#f0ece3', letterSpacing: '-0.01em', fontWeight: '600' }}>Roadmap</h2>
         <span className="sans" style={{ fontSize: '0.9rem', color: '#555', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase' }}>chapters of growth</span>
       </div>
+      {pages.length === 0 && (
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          style={{ fontFamily: 'DM Sans, sans-serif', color: '#444', fontSize: '0.95rem', marginBottom: '32px' }}>
+          No chapters yet — write your first one ✦
+        </motion.p>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
         <AnimatePresence>
           {pages.map((pg, i) => {
@@ -564,7 +545,7 @@ function calcStreak(entries) {
 
 // ─── STREAKS PAGE ─────────────────────────────────────────────────────────────
 function StreaksPage({ showSaved }) {
-  const [entries, setEntries, loaded] = useStorage('mine_streaks', []);
+  const [entries, setEntries] = useStorage('mine_streaks', []);
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [title, setTitle] = useState('');
@@ -588,8 +569,6 @@ function StreaksPage({ showSaved }) {
   const confirmLabel = entries.find(e => e.id === confirmId)?.title ?? '';
   const sorted = [...entries].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-  if (!loaded) return <LoadingSpinner />;
-
   return (
     <div style={{ padding: '40px 0' }}>
       <ConfirmDelete isOpen={!!confirmId} onConfirm={doDelete} onCancel={() => setConfirmId(null)} label={confirmLabel} />
@@ -611,7 +590,13 @@ function StreaksPage({ showSaved }) {
           </div>
         )}
       </div>
-      {!hasEntryToday && (
+      {entries.length === 0 && (
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          style={{ fontFamily: 'DM Sans, sans-serif', color: '#444', fontSize: '0.95rem', marginBottom: '32px' }}>
+          No journal entries yet — start your streak today 🔥
+        </motion.p>
+      )}
+      {!hasEntryToday && entries.length > 0 && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
           style={{ marginBottom: '28px', background: '#141414', border: '1px solid #f9731622', borderRadius: '12px', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '1.2rem' }}>✍️</span>
@@ -725,7 +710,7 @@ function SavedToast({ show }) {
           exit={{ opacity: 0, y: 10, scale: 0.95 }}
           className="saving-indicator"
         >
-          <span>✓</span> Saved to your account
+          <span>✓</span> Saved
         </motion.div>
       )}
     </AnimatePresence>
